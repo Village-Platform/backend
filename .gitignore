@@ -24,3 +24,5 @@
 # committing host output here shadows the load path and hides newly added assets.
 /public/assets
 
+# Ignore Secrets files
+/config/secrets
