@@ -23,7 +23,7 @@ bearer):
 
 ```http
 PUT /api/v1/devices/{installationId}
-Authorization: Bearer <jwt>        (omit for guests)
+Authorization: Bearer <jwt>        (the guest token for guests; see README "Endpoints")
 Content-Type: application/json
 
 { "token": "<fcm token>", "locale": "ar", "app_version": "2.4.0", "platform": "android" }
@@ -58,7 +58,7 @@ and stops receiving the previous user's notifications.
 ```http
 GET /api/v1/topics
 X-Installation-Id: {installationId}
-Authorization: Bearer <jwt>        (optional)
+Authorization: Bearer <jwt>        (the user token, or the guest token)
 ```
 
 ```json

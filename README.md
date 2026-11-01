@@ -51,15 +51,29 @@ To start fresh: `bin/rails db:reset` (drops and recreates the development databa
 
 ## Endpoints (`/api/v1`)
 
+Every call sends `Authorization: Bearer <token>`: the user's token, or for someone not signed in a
+guest token from `POST /auth/guest`. "public" below means any token, guest or user. A guest token
+names no user, so endpoints marked "user" still answer 401 with it. Only `/auth/*`, `/app_config`
+and `/categories/:id/icon` work with no token at all.
+
+Enforcement is behind `API_TOKEN_REQUIRED=1`. Until it is set, calls without a token are still
+served (app versions that predate guest tokens) and counted in `aghour.auth.tokenless_requests`
+with `result=allowed`; set it once that count has fallen to what you are willing to break.
+
+The app: get a guest token on first launch if it has no user token, keep it in DataStore, and on a
+401 from a public endpoint fetch a new guest token and retry once. After logout, switch back to the
+guest token. Both kinds last 30 days.
+
 | Method | Path                               | Auth          |
 |--------|------------------------------------|---------------|
-| POST   | `/auth/register`                   | public        |
-| POST   | `/auth/login`                      | public        |
+| POST   | `/auth/guest`                      | none — `{ data: { token } }`, 30 per minute per IP |
+| POST   | `/auth/register`                   | none          |
+| POST   | `/auth/login`                      | none          |
 | GET/PATCH | `/me`                           | user          |
 | GET    | `/categories`, `/categories/:id`   | public        |
 | POST/PATCH/DELETE | `/categories[/:id]`     | super_admin   |
 | GET    | `/categories/:id/firms`            | public        |
-| GET    | `/categories/:id/icon?v=`          | public — category image; use the `icon_url` from the JSON (cached 1 year per version) |
+| GET    | `/categories/:id/icon?v=`          | none — category image; use the `icon_url` from the JSON (cached 1 year per version) |
 | GET    | `/firms?category_id=&q=&mine=true` | public — lists only visible firms (active, owner subscribed), for every role; `mine=true` lists all of your own |
 | GET    | `/firms/:id`                       | public — visible firms; owners and the super admin can also open pending / suspended ones |
 | POST   | `/firms`                           | firm_admin+   |
@@ -69,7 +83,7 @@ To start fresh: `bin/rails db:reset` (drops and recreates the development databa
 | GET    | `/admin/users?role=`               | super_admin   |
 | PATCH  | `/admin/users/:id` (`role`)        | super_admin   |
 | GET    | `/payment_methods`                 | public        |
-| GET    | `/app_config`                      | public — `{ data: { features: { plans: false } } }`; flags are managed at `/admin/feature_flags`, missing = off, cached 5 min |
+| GET    | `/app_config`                      | none — `{ data: { features: { plans: false } } }`; flags are managed at `/admin/feature_flags`, missing = off, cached 5 min |
 | GET    | `/subscription_plans[/:id]`        | public        |
 | POST/PATCH/DELETE | `/subscription_plans[/:id]` | super_admin |
 | GET    | `/subscriptions[/:id]`             | user (own)    |

@@ -10,6 +10,9 @@ data:
   # Background jobs (push notifications, scheduled campaigns) run in Solid Queue processes forked by
   # Puma. Move them to their own Deployment when campaigns start competing with web requests.
   SOLID_QUEUE_IN_PUMA: "1"
+  # "1" = every /api/v1 call needs a user or guest token. Flip it once aghour.auth.tokenless_requests
+  # {result="allowed"} is near zero, i.e. old app versions are gone; set it back to "0" to roll back.
+  API_TOKEN_REQUIRED: "0"
   RAILS_LOG_LEVEL: info
   CORS_ORIGINS: "*"
   SUPER_ADMIN_PHONE: "01000000000"

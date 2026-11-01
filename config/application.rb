@@ -37,6 +37,10 @@ module AghourServices
     # because the admin dashboard (/admin) needs cookies, sessions, flash and assets.
     config.api_only = false
 
+    # 1 = every /api/v1 call needs a user or guest token (Api::V1::BaseController). Off by default so
+    # app versions without guest tokens keep working; flip it once tokenless traffic has died down.
+    config.x.api_token_required = ENV["API_TOKEN_REQUIRED"] == "1"
+
     # Image variants (thumbnails) with libvips (installed in Dockerfile.vercel).
     config.active_storage.variant_processor = :vips
 

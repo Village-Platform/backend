@@ -1,6 +1,8 @@
 module Api
   module V1
     class CategoriesController < BaseController
+      # Image loaders fetch icon_url without the API's headers.
+      skip_before_action :require_api_token!, only: :icon
       before_action :authenticate_user!, except: %i[index show icon]
       before_action :set_category, only: %i[show update destroy icon]
 

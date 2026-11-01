@@ -44,6 +44,11 @@ module Observability
                 { surface: "admin", result: "success" }, { surface: "admin", result: "invalid_credentials" },
                 { surface: "admin", result: "rate_limited" } ]
       ),
+      tokenless_api_requests: Definition.new(
+        kind: :counter, name: "aghour.auth.tokenless_requests", unit: "{request}",
+        description: "API calls with neither a user nor a guest token; allowed until API_TOKEN_REQUIRED=1",
+        attributes: %i[ result ], zero: [ { result: "allowed" }, { result: "rejected" } ]
+      ),
       registrations: Definition.new(
         kind: :counter, name: "aghour.auth.registrations", unit: "{user}", description: "New accounts",
         zero: [ {} ]

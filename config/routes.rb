@@ -81,6 +81,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       post "auth/register", to: "auth#register"
       post "auth/login",    to: "auth#login"
+      post "auth/guest",    to: "auth#guest"
 
       resource :me, only: %i[show update destroy], controller: "me"
 

@@ -122,6 +122,12 @@ and `en.yml`.
 
 These are easy to break from a single file and are covered by request specs:
 
+- **Every API call carries a token**, the user's or a guest's (`POST /api/v1/auth/guest`).
+  `Api::V1::BaseController` runs `require_api_token!`, enforced only with `API_TOKEN_REQUIRED=1`
+  so old app versions keep working; `/auth/*`, `app_config` and `categories#icon` skip it. Guest
+  tokens carry `typ: "guest"` and no `sub`, and `user_from_token` refuses any typed token — keep
+  that check, or a guest token reaches `User.find_by(id:)`. New endpoints get the guard for free;
+  skip it only for something a client must reach before it holds a token.
 - **Firm visibility** is not just `status: active`. `Firm.visible` = active **and** the owner holds a
   current subscription (or is a super admin). Expiry is purely time-based — no job flips a flag.
   Any new public listing must go through `Firm.visible` or `policy_scope(Firm)`.
