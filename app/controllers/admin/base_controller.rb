@@ -1,13 +1,22 @@
 module Admin
-  # Base for all dashboard pages: Arabic, cookie session, super admins only.
+  # Base for all dashboard pages: Arabic, cookie session. Super admins reach every page; admins
+  # (reviewers) only the actions a controller opens to them with `allow_reviewers`.
   class BaseController < ActionController::Base
     include Pagination
     include Filterable
 
     layout "admin"
 
+    class_attribute :reviewer_actions, instance_writer: false, default: [].freeze
+
+    # Opens these actions to admins as well as super admins: the review queue.
+    def self.allow_reviewers(*actions)
+      self.reviewer_actions = (reviewer_actions + actions.map(&:to_s)).freeze
+    end
+
     around_action :use_arabic
     before_action :require_admin
+    before_action :require_super_admin
 
     helper_method :current_admin
 
@@ -29,6 +38,14 @@ module Admin
 
       reset_session
       redirect_to admin_login_path, alert: "يجب تسجيل الدخول أولاً."
+    end
+
+    # An admin landing anywhere else is sent to the firms waiting for review, which is always open
+    # to them, so this never loops.
+    def require_super_admin
+      return if current_admin.super_admin? || reviewer_actions.include?(action_name)
+
+      redirect_to admin_firms_path(status: "pending"), alert: "هذه الصفحة لمدير النظام فقط."
     end
 
     # Pagy keeps its own per-thread locale for the pager's labels; it is reset afterwards so a

@@ -1,19 +1,40 @@
 <%= page_header @article.title, subtitle: enum_label(Article, :kind, @article.kind) do %>
   <% if @article.deleted? %>
     <%= badge("محذوف", "red") %>
-    <%= button_to restore_admin_article_path(@article), method: :patch, class: "btn btn-gold" do %>
-      <%= icon(:restore, size: 16) %> استعادة المقال
-    <% end %>
-    <%= button_to destroy_fully_admin_article_path(@article), method: :delete, class: "btn btn-danger",
-          form: { data: { confirm: "هل أنت متأكد من الحذف النهائي للمقال؟ لا يمكن التراجع عن هذا الإجراء!" } } do %>
-      <%= icon(:trash, size: 16) %> حذف نهائي
+    <% if current_admin.super_admin? %>
+      <%= button_to restore_admin_article_path(@article), method: :patch, class: "btn btn-gold" do %>
+        <%= icon(:restore, size: 16) %> استعادة المقال
+      <% end %>
+      <%= button_to destroy_fully_admin_article_path(@article), method: :delete, class: "btn btn-danger",
+            form: { data: { confirm: "هل أنت متأكد من الحذف النهائي للمقال؟ لا يمكن التراجع عن هذا الإجراء!" } } do %>
+        <%= icon(:trash, size: 16) %> حذف نهائي
+      <% end %>
     <% end %>
   <% else %>
-    <%= link_to edit_admin_article_path(@article), class: "btn btn-ghost" do %><%= icon(:edit, size: 16) %> تعديل<% end %>
-    <%= button_to admin_article_path(@article), method: :delete, class: "btn btn-danger",
-          form: { data: { confirm: "نقل هذا المقال إلى سلة المحذوفات؟" } } do %><%= icon(:trash, size: 16) %> حذف<% end %>
+    <% unless @article.approved? %>
+      <%= button_to approve_admin_article_path(@article), method: :patch, class: "btn" do %><%= icon(:check, size: 16) %> اعتماد ونشر<% end %>
+    <% end %>
+    <% if current_admin.super_admin? %>
+      <%= link_to edit_admin_article_path(@article), class: "btn btn-ghost" do %><%= icon(:edit, size: 16) %> تعديل<% end %>
+      <%= button_to admin_article_path(@article), method: :delete, class: "btn btn-danger",
+            form: { data: { confirm: "نقل هذا المقال إلى سلة المحذوفات؟" } } do %><%= icon(:trash, size: 16) %> حذف<% end %>
+    <% end %>
   <% end %>
   <%= link_to admin_articles_path, class: "btn btn-ghost" do %><%= icon(:arrow_left, size: 16) %> العودة للقائمة<% end %>
+<% end %>
+
+<% if @article.pending? && !@article.deleted? %>
+  <section class="card mb-4">
+    <div class="card-header"><h2>مراجعة الخبر</h2></div>
+    <p><small>الاعتماد ينشر الخبر في موعده (أو الآن إن لم يُحدد موعد) ويرسل إشعاراً لكاتبه.</small></p>
+    <%= form_with url: reject_admin_article_path(@article), method: :patch, data: { confirm: "رفض هذا الخبر؟" } do |f| %>
+      <div class="field">
+        <%= f.label :reason, "سبب الرفض" %>
+        <%= f.text_area :reason, required: true, rows: 2, placeholder: "مثال: الخبر مكرر أو غير موثق" %>
+      </div>
+      <%= button_tag type: "submit", class: "btn btn-danger" do %><%= icon(:close) %> رفض الخبر<% end %>
+    <% end %>
+  </section>
 <% end %>
 
 <% if (campaign = @article.push_campaign) %>
@@ -24,7 +45,7 @@
   </div>
 <% end %>
 
-<% if @article.deleted? %>
+<% if @article.deleted? && current_admin.super_admin? %>
   <div class="card mb-4 border-r-4 border-bad bg-bad/10 p-4 flex flex-wrap items-center justify-between gap-3">
     <div class="flex items-center gap-3">
       <span class="badge badge-red text-xs">مقال محذوف</span>
@@ -56,7 +77,14 @@
         <%= badge("مجدول", "gold") %> <span class="text-xs text-muted"><%= fmt_time(@article.published_at) %></span>
       <% end %>
     </dd>
-    <dt>الكاتب</dt><dd><%= link_to @article.author.name, admin_user_path(@article.author) %></dd>
+    <dt>المراجعة</dt><dd><%= enum_badge(Article, :review_status, @article.review_status) %></dd>
+    <% if @article.reviewed_at %>
+      <dt>تمت المراجعة</dt><dd><%= fmt_time(@article.reviewed_at) %> — <%= @article.reviewed_by&.name %></dd>
+    <% end %>
+    <% if @article.rejection_reason.present? %>
+      <dt>سبب الرفض</dt><dd class="text-bad"><%= @article.rejection_reason %></dd>
+    <% end %>
+    <dt>الكاتب</dt><dd><%= current_admin.super_admin? ? link_to(@article.author.name, admin_user_path(@article.author)) : @article.author.name %></dd>
     <dt>تاريخ الإنشاء</dt><dd><%= fmt_time(@article.created_at) %></dd>
     <% if @article.deleted? %>
       <dt>تاريخ الحذف</dt><dd class="text-bad"><%= fmt_time(@article.deleted_at) %> (<%= time_ago_in_words(@article.deleted_at) %>)</dd>

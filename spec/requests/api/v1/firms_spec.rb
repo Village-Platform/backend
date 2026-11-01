@@ -64,27 +64,22 @@ RSpec.describe "Firms API", type: :request do
   describe "POST /api/v1/firms" do
     let(:params) { { firm: { name: "صيدلية النور", category_id: category.id, status: "active" } } }
 
-    it "lets firm admins create a pending firm (status is not assignable by owners)" do
-      post "/api/v1/firms", params:, headers: auth_headers(owner), as: :json
+    it "lets a subscribed firm admin publish directly (status is not assignable by owners)" do
+      post "/api/v1/firms", params: { firm: params[:firm].merge(status: "suspended") }, headers: auth_headers(owner), as: :json
 
       expect(response).to have_http_status(:created)
-      expect(json.dig("data", "status")).to eq("pending")
+      expect(json.dig("data", "status")).to eq("active")
       expect(json.dig("data", "owner_id")).to eq(owner.id)
     end
 
-    it "forbids normal users" do
-      post "/api/v1/firms", params:, headers: auth_headers(create(:user)), as: :json
-      expect(response).to have_http_status(:forbidden)
-    end
-
-    it "requires a current subscription" do
+    it "submits the firm for review when the firm admin's subscription expired" do
       unsubscribed = create(:user, :firm_admin)
       create(:subscription, :expired, user: unsubscribed)
 
       post "/api/v1/firms", params:, headers: auth_headers(unsubscribed), as: :json
 
-      expect(response).to have_http_status(:forbidden)
-      expect(json.dig("error", "code")).to eq("subscription_required")
+      expect(response).to have_http_status(:created)
+      expect(json.dig("data", "status")).to eq("pending")
     end
 
     it "enforces the plan's max_firms" do
@@ -129,8 +124,9 @@ RSpec.describe "Firms API", type: :request do
       expect(firm.reload.name).not_to eq("Hacked")
     end
 
-    it "sends an owner's edit of an active firm back for review" do
+    it "sends an unsubscribed owner's edit of an active firm back for review" do
       firm.update!(status: :active)
+      owner.subscriptions.update_all(ends_at: 1.minute.ago)
 
       patch "/api/v1/firms/#{firm.id}", params: { firm: { phone: "01099999999" } },
                                         headers: auth_headers(owner), as: :json
@@ -138,6 +134,16 @@ RSpec.describe "Firms API", type: :request do
       expect(response).to have_http_status(:ok)
       expect(json.dig("data", "status")).to eq("pending")
       expect(firm.reload).to be_pending
+      expect(firm.phone).to eq("01099999999")
+    end
+
+    it "keeps a subscribed owner's edit of an active firm live (they publish directly)" do
+      firm.update!(status: :active)
+
+      patch "/api/v1/firms/#{firm.id}", params: { firm: { phone: "01099999999" } },
+                                        headers: auth_headers(owner), as: :json
+
+      expect(firm.reload).to be_active
       expect(firm.phone).to eq("01099999999")
     end
 
@@ -178,10 +184,11 @@ RSpec.describe "Firms API", type: :request do
     end
 
     it "tells each viewer what they may do" do
-      expect(can_for).to eq("update" => false, "destroy" => false, "moderate" => false)
-      expect(can_for(auth_headers(create(:user)))).to eq("update" => false, "destroy" => false, "moderate" => false)
-      expect(can_for(auth_headers(owner))).to eq("update" => true, "destroy" => true, "moderate" => false)
-      expect(can_for(auth_headers(super_admin))).to eq("update" => true, "destroy" => true, "moderate" => true)
+      expect(can_for).to eq("update" => false, "destroy" => false, "moderate" => false, "review" => false)
+      expect(can_for(auth_headers(create(:user)))).to eq("update" => false, "destroy" => false, "moderate" => false, "review" => false)
+      expect(can_for(auth_headers(owner))).to eq("update" => true, "destroy" => true, "moderate" => false, "review" => false)
+      expect(can_for(auth_headers(create(:user, :admin)))).to eq("update" => false, "destroy" => false, "moderate" => false, "review" => true)
+      expect(can_for(auth_headers(super_admin))).to eq("update" => true, "destroy" => true, "moderate" => true, "review" => true)
     end
 
     it "is included in lists too" do

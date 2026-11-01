@@ -96,6 +96,12 @@ handles them.
 A target can disappear between send and tap (article deleted, firm suspended): handle the 404 by
 showing the inbox.
 
+Review notifications reuse these screens. A super admin told of a submission (admins are not
+notified) gets `firm` / `article` with the pending record's id, which their token can open; an author told
+of approval or rejection gets the same, and can open their own record in any state. `kind`
+(`firm_submitted`, `article_submitted`, `firm_approved`, `firm_rejected`, `article_approved`,
+`article_rejected`) is informational, like every `kind`: route on `screen`.
+
 ## 5. The inbox
 
 Signed in, the inbox is the user's, as it always was:

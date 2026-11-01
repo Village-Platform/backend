@@ -26,13 +26,13 @@ module Notifications
       "العنصر المطلوب غير موجود أو غير منشور." if target.nil?
     end
 
-    # The record a tap opens, if it can still be shown: articles that are published or scheduled
-    # (a campaign is sent when its article goes live), visible firms.
+    # The record a tap opens, if it can still be shown: approved articles that are published or
+    # scheduled (a campaign is sent when its article goes live), visible firms.
     def target
       return @target if defined?(@target)
 
       @target = case screen
-      when "article" then Article.where.not(published_at: nil).find_by(id:)
+      when "article" then Article.approved.where.not(published_at: nil).find_by(id:)
       when "firm" then Firm.visible.find_by(id:)
       when "category" then Category.find_by(id:)
       when "subscription" then Subscription.find_by(id:)

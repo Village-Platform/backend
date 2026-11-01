@@ -1,5 +1,5 @@
 module Admin
-  # Login page for the dashboard. Only super admins can sign in.
+  # Login page for the dashboard. Super admins and admins (reviewers) can sign in.
   class SessionsController < ActionController::Base
     layout "admin_auth"
 
@@ -18,7 +18,7 @@ module Admin
     def create
       user = User.find_by(phone: User.normalize_value_for(:phone, params[:phone].to_s))
 
-      if user&.super_admin? && user.authenticate(params[:password].to_s)
+      if user&.reviewer? && user.authenticate(params[:password].to_s)
         Observability::Metrics.increment(:logins, surface: "admin", result: "success")
         reset_session # prevent session fixation
         AdminSession.sign_in(session, user)

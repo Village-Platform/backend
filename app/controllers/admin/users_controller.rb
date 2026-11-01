@@ -33,7 +33,7 @@ module Admin
       @visible_ids = Firm.visible.where(id: @firms.map(&:id)).pluck(:id).to_set
       @firm_count = @firms_pagy.count
       @device_count = @devices_pagy.count
-      @owners = User.where(role: %i[ firm_admin super_admin ]).where.not(id: @user.id).order(:name)
+      @owners = User.where(role: %i[ firm_admin admin super_admin ]).where.not(id: @user.id).order(:name)
       @attachable_firms = Firm.includes(:owner).where.not(owner_id: @user.id).order(:name)
       # Super admins are unlimited; for everyone else the plan caps what they may add themselves.
       @firm_quota = @current_subscription&.subscription_plan&.max_firms unless @user.super_admin?

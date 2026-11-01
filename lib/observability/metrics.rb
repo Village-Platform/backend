@@ -68,6 +68,10 @@ module Observability
         buckets: [ 5.minutes, 15.minutes, 30.minutes, 1.hour, 2.hours, 4.hours, 8.hours, 12.hours,
                    1.day, 2.days, 3.days, 7.days ].map(&:to_i)
       ),
+      submissions_reviewed: Definition.new(
+        kind: :counter, name: "aghour.submissions.reviewed", unit: "{submission}",
+        description: "Firms and articles approved or rejected in review", attributes: %i[ type outcome ]
+      ),
       payment_screenshot_size: Definition.new(
         kind: :histogram, name: "aghour.payment_screenshots.uploaded.size", unit: "By",
         description: "Payment screenshot sizes", attributes: %i[ content_type ],

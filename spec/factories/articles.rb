@@ -7,5 +7,7 @@ FactoryBot.define do
     published_at { 1.hour.ago }
 
     trait(:draft) { published_at { nil } }
+    trait(:pending) { review_status { :pending } }
+    trait(:rejected) { review_status { :rejected }; rejection_reason { "Incomplete" } }
   end
 end

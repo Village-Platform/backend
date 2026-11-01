@@ -35,8 +35,10 @@ module RansackTiers
       @ransack_tiers.fetch(kind).fetch(ransack_admin?(auth_object) ? :admin : :public)
     end
 
+    # Reviewers (admins and super admins): admins already see owners and authors, phones included,
+    # on the review pages, and every other model's listing stays closed to them by its policy.
     def ransack_admin?(auth_object)
-      auth_object.respond_to?(:super_admin?) && auth_object.super_admin?
+      auth_object.respond_to?(:reviewer?) && auth_object.reviewer?
     end
   end
 end

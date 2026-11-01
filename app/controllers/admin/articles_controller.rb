@@ -1,6 +1,7 @@
 module Admin
   class ArticlesController < BaseController
-    before_action :set_article, only: %i[show edit update destroy restore destroy_fully]
+    before_action :set_article, only: %i[show edit update destroy approve reject restore destroy_fully]
+    allow_reviewers :index, :show, :approve, :reject
 
     def index
       scope = case params[:deleted]
@@ -11,6 +12,7 @@ module Admin
 
       scope = scope.includes(:author).order(Arel.sql("published_at DESC NULLS FIRST"), id: :desc)
       scope = scope.where(kind: params[:kind]) if Article.kinds.key?(params[:kind])
+      scope = scope.where(review_status: params[:review_status]) if Article.review_statuses.key?(params[:review_status])
       scope = scope.where("articles.title ILIKE ?", like(params[:q])) if params[:q].present?
 
       @deleted_count = Article.only_deleted.count
@@ -42,6 +44,25 @@ module Admin
       else
         render :edit, status: :unprocessable_content
       end
+    end
+
+    # Same service as the API: publishes (now, if no date was set), records the reviewer, schedules
+    # the push campaign and notifies the author.
+    def approve
+      Articles::Review.approve(article: @article, reviewer: current_admin)
+      redirect_back_or_to admin_article_path(@article), notice: "تم اعتماد الخبر ونشره."
+    rescue Submissions::ReviewError
+      redirect_back_or_to admin_article_path(@article), alert: "الخبر معتمد بالفعل."
+    end
+
+    def reject
+      reason = params[:reason].to_s.strip
+      return redirect_to admin_article_path(@article), alert: "يجب كتابة سبب الرفض." if reason.blank?
+
+      Articles::Review.reject(article: @article, reviewer: current_admin, reason:)
+      redirect_to admin_article_path(@article), notice: "تم رفض الخبر وإشعار كاتبه."
+    rescue Submissions::ReviewError
+      redirect_to admin_article_path(@article), alert: "تمت مراجعة هذا الخبر بالفعل."
     end
 
     def destroy

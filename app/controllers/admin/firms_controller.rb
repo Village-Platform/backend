@@ -1,7 +1,8 @@
 module Admin
   class FirmsController < BaseController
-    before_action :set_firm, only: %i[show edit update destroy approve suspend restore destroy_fully]
+    before_action :set_firm, only: %i[show edit update destroy approve reject suspend restore destroy_fully]
     before_action :load_form_options, only: %i[new create edit update]
+    allow_reviewers :index, :show, :approve, :reject
 
     def index
       scope = case params[:deleted]
@@ -60,9 +61,22 @@ module Admin
       destroy_fully_and_redirect(@firm, admin_firms_path)
     end
 
+    # Same service as the API: records the reviewer and notifies the owner.
     def approve
-      @firm.update!(status: :active)
+      Firms::Review.approve(firm: @firm, reviewer: current_admin)
       redirect_back_or_to admin_firm_path(@firm), notice: "تم اعتماد النشاط."
+    rescue Submissions::ReviewError
+      redirect_back_or_to admin_firm_path(@firm), alert: "النشاط معتمد بالفعل."
+    end
+
+    def reject
+      reason = params[:reason].to_s.strip
+      return redirect_to admin_firm_path(@firm), alert: "يجب كتابة سبب الرفض." if reason.blank?
+
+      Firms::Review.reject(firm: @firm, reviewer: current_admin, reason:)
+      redirect_to admin_firm_path(@firm), notice: "تم رفض النشاط وإشعار صاحبه."
+    rescue Submissions::ReviewError
+      redirect_to admin_firm_path(@firm), alert: "تمت مراجعة هذا النشاط بالفعل."
     end
 
     def suspend
@@ -78,7 +92,7 @@ module Admin
 
     def load_form_options
       @categories = Category.ordered
-      @owners = User.where(role: %i[firm_admin super_admin]).order(:name)
+      @owners = User.where(role: %i[firm_admin admin super_admin]).order(:name)
     end
 
     # Reached from a user's page: "+ نشاط جديد" carries the owner so it is not picked twice.

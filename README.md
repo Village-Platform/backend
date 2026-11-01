@@ -45,9 +45,14 @@ To start fresh: `bin/rails db:reset` (drops and recreates the development databa
 
 | Role          | Can do                                                        |
 |---------------|---------------------------------------------------------------|
-| `user`        | Browse categories, firms, news. Default on register.          |
-| `firm_admin`  | Create and manage **own** firms while subscribed (created as `pending`). |
+| `user`        | Browse. Default on register. Submits firms and articles **for review** (at most 3 of each waiting); an approved firm shows once its owner subscribes. |
+| `firm_admin`  | Publishes own firms (within the plan's `max_firms`) and articles **directly** while subscribed; without a current subscription, submits for review like a `user`. |
+| `admin`       | Publishes directly with no subscription or quota (own firms always visible). Reviews submissions: approve / reject in the API and on the dashboard's firm and article pages, nothing else there. |
 | `super_admin` | Everything: categories, news, approve firms, change roles.    |
+
+Who publishes directly is one predicate, `User#can_publish_directly?`. The client never asks for a
+status: the server decides from the author. Super admins (not admins) get an inbox row and a push
+(`screen` `firm` / `article`) for each submission; authors get one when it is approved or rejected.
 
 ## Endpoints (`/api/v1`)
 
@@ -74,12 +79,15 @@ guest token. Both kinds last 30 days.
 | POST/PATCH/DELETE | `/categories[/:id]`     | super_admin   |
 | GET    | `/categories/:id/firms`            | public        |
 | GET    | `/categories/:id/icon?v=`          | none — category image; use the `icon_url` from the JSON (cached 1 year per version) |
-| GET    | `/firms?category_id=&q=&mine=true` | public — lists only visible firms (active, owner subscribed), for every role; `mine=true` lists all of your own |
-| GET    | `/firms/:id`                       | public — visible firms; owners and the super admin can also open pending / suspended ones |
-| POST   | `/firms`                           | firm_admin+   |
-| PATCH/DELETE | `/firms/:id`                 | owner / super_admin — an owner's edit of an active firm sends it back to `pending`; firm JSON has `can: { update, destroy, moderate }` |
-| GET    | `/articles?kind=news`, `/articles/:id` | public    |
-| POST/PATCH/DELETE | `/articles[/:id]`       | super_admin   |
+| GET    | `/firms?category_id=&q=&mine=true&review=pending` | public — lists only visible firms (active, owner subscribed), for every role; `mine=true` lists all of your own; `review=pending` (admin, super_admin) lists the firms waiting for review |
+| GET    | `/firms/:id`                       | public — visible firms; owners, admins and the super admin can also open pending / suspended ones |
+| POST   | `/firms`                           | user — `active` or `pending` by role (see Roles); `403 subscription_required` past the plan quota, `403 too_many_pending` past the review cap |
+| PATCH/DELETE | `/firms/:id`                 | owner / super_admin — an edit of an active firm by an owner who cannot publish directly, or of a rejected firm, sends it to `pending`; firm JSON has `rejection_reason` and `can: { update, destroy, moderate, review }` |
+| PATCH  | `/firms/:id/approve`, `/firms/:id/reject` (`reason`) | admin, super_admin — `422 already_reviewed` when it is not waiting; a rejected firm is `suspended` with `rejection_reason` |
+| GET    | `/articles?kind=news&mine=true&review=pending`, `/articles/:id` | public — published articles; authors see their own (any state), reviewers every article |
+| POST   | `/articles`                        | user — `review_status` `approved` or `pending` by role; `403 too_many_pending` |
+| PATCH/DELETE | `/articles/:id`              | author / super_admin — same re-review rule as firms; article JSON has `review_status`, `rejection_reason`, `can: { update, destroy, review }` |
+| PATCH  | `/articles/:id/approve`, `/articles/:id/reject` (`reason`) | admin, super_admin — approving publishes now if no `published_at` was set |
 | GET    | `/admin/users?role=`               | super_admin   |
 | PATCH  | `/admin/users/:id` (`role`)        | super_admin   |
 | GET    | `/payment_methods`                 | public        |
@@ -121,7 +129,9 @@ Open `http://localhost:3000/admin/login` and sign in with the seeded super admin
 - Built in-house with plain Rails views (ERB + one CSS file, `app/assets/stylesheets/admin.css`).
   No admin gem, no JavaScript framework, nothing to license.
 - Arabic, right-to-left, dark green and gold. Works on phone screens too.
-- Only `super_admin` users can sign in. The session lasts 12 hours, login is rate-limited,
+- `super_admin` and `admin` users can sign in. An admin reaches only the firm and article lists,
+  their pages and approve / reject (`allow_reviewers` in `Admin::BaseController`); every other page
+  redirects to the firms waiting for review. The session lasts 12 hours, login is rate-limited,
   and access is re-checked on every request (a demoted admin loses access at once).
 - Brand images: originals in `public/brand/` (logo, cover, splash, village photo). The dashboard uses
   web-optimized copies in `public/brand/web/` (logo, light logo mark for dark backgrounds, favicons,
@@ -132,9 +142,9 @@ Open `http://localhost:3000/admin/login` and sign in with the seeded super admin
 |------|-----------------|
 | الرئيسية | Counters, pending subscription requests, subscriptions ending within 7 days, firms waiting for approval |
 | الاشتراكات | Filter / search, view details and the payment screenshot, approve or reject with a reason |
-| المنشآت | Filter / search, add, edit, approve, suspend, delete; shows whether the firm is visible to the public |
+| المنشآت | Filter / search, add, edit, approve, reject with a reason, suspend, delete; shows whether the firm is visible to the public; the sidebar counts firms waiting for review |
 | الأقسام | Add, edit, order, enable/disable, upload / remove the icon image (can't delete a category that has firms) |
-| الأخبار | Draft, publish now or schedule; filter by kind |
+| الأخبار | Draft, publish now or schedule; filter by kind and review status; approve or reject users' submissions; the sidebar counts those waiting |
 | باقات الاشتراك | Prices in EGP, duration, max firms (purchased plans can only be deactivated) |
 | المستخدمون | Search, change role, reset password, see subscriptions and firms |
 

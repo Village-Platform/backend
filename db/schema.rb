@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_01_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_01_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -53,8 +53,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_100000) do
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
     t.bigint "notify_topic_id"
+    t.integer "review_status", default: 1, null: false
+    t.text "rejection_reason"
+    t.bigint "reviewed_by_id"
+    t.datetime "reviewed_at"
     t.index "lower((title)::text) gin_trgm_ops", name: "index_articles_on_title_trigram", using: :gin
     t.index ["author_id"], name: "index_articles_on_author_id"
+    t.index ["created_at"], name: "index_articles_pending_review", where: "(review_status = 0)"
     t.index ["kind", "published_at"], name: "index_articles_on_kind_and_published_at"
     t.index ["notify_topic_id"], name: "index_articles_on_notify_topic_id"
     t.index ["published_at"], name: "index_articles_on_published_at"
@@ -122,6 +127,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_100000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
+    t.text "rejection_reason"
+    t.bigint "reviewed_by_id"
+    t.datetime "reviewed_at"
     t.index "lower((address)::text) gin_trgm_ops", name: "index_firms_on_address_trigram", using: :gin
     t.index "lower((name)::text) gin_trgm_ops", name: "index_firms_on_name_trigram", using: :gin
     t.index "lower((phone)::text) gin_trgm_ops", name: "index_firms_on_phone_trigram", using: :gin
@@ -417,11 +425,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_100000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "articles", "topics", column: "notify_topic_id", on_delete: :nullify
   add_foreign_key "articles", "users", column: "author_id"
+  add_foreign_key "articles", "users", column: "reviewed_by_id"
   add_foreign_key "campaign_topics", "notification_campaigns", on_delete: :cascade
   add_foreign_key "campaign_topics", "topics"
   add_foreign_key "devices", "users"
   add_foreign_key "firms", "categories"
   add_foreign_key "firms", "users", column: "owner_id"
+  add_foreign_key "firms", "users", column: "reviewed_by_id"
   add_foreign_key "notification_campaigns", "articles"
   add_foreign_key "notification_campaigns", "users", column: "created_by_id"
   add_foreign_key "notifications", "devices", on_delete: :cascade

@@ -21,6 +21,11 @@ class ApplicationPolicy
     user&.super_admin? || false
   end
 
+  # Admins and super admins: review firm and article submissions.
+  def reviewer?
+    user&.reviewer? || false
+  end
+
   class Scope
     def initialize(user, scope)
       @user = user
@@ -37,6 +42,10 @@ class ApplicationPolicy
 
     def super_admin?
       user&.super_admin? || false
+    end
+
+    def reviewer?
+      user&.reviewer? || false
     end
   end
 end

@@ -11,7 +11,13 @@ class Notification < ApplicationRecord
     subscription_rejected: 1,
     subscription_expiring: 2,
     subscription_expired: 3,
-    system_announcement: 4
+    system_announcement: 4,
+    firm_submitted: 5,
+    article_submitted: 6,
+    firm_approved: 7,
+    firm_rejected: 8,
+    article_approved: 9,
+    article_rejected: 10
   }, validate: true
 
   belongs_to :user, optional: true

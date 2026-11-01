@@ -16,6 +16,8 @@ ar:
       rate_limited: "طلبات كثيرة، حاول مرة أخرى بعد قليل."
       invalid_image_type: "يجب أن تكون صورة بصيغة PNG أو JPEG أو WEBP"
       file_too_large: "يجب أن يكون حجمها أقل من %{size}"
+      too_many_pending: "لديك عدد كبير من الطلبات قيد المراجعة. انتظر حتى تتم مراجعتها."
+      already_reviewed: "تمت مراجعة هذا العنصر بالفعل."
   account_deletions:
     invalid: "رقم الهاتف أو كلمة المرور غير صحيحة."
     super_admin: "لا يمكن حذف حساب مدير النظام من هنا. تواصل مع مدير آخر."
@@ -36,6 +38,24 @@ ar:
     system_announcement:
       title: "%{title}"
       body: "%{body}"
+    firm_submitted:
+      title: "منشأة جديدة بانتظار المراجعة"
+      body: "أرسل %{author} منشأة «%{name}» للمراجعة."
+    article_submitted:
+      title: "خبر جديد بانتظار المراجعة"
+      body: "أرسل %{author} خبر «%{name}» للمراجعة."
+    firm_approved:
+      title: "تم اعتماد منشأتك"
+      body: "تم اعتماد منشأة «%{name}». تظهر في التطبيق ما دام لديك اشتراك فعّال."
+    firm_rejected:
+      title: "تم رفض منشأتك"
+      body: "تم رفض منشأة «%{name}» للسبب التالي: %{reason}"
+    article_approved:
+      title: "تم نشر خبرك"
+      body: "تم اعتماد خبر «%{name}» ونشره."
+    article_rejected:
+      title: "تم رفض خبرك"
+      body: "تم رفض خبر «%{name}» للسبب التالي: %{reason}"
   payment_methods:
     instapay: "إنستاباي"
     vodafone_cash: "فودافون كاش"
@@ -88,6 +108,7 @@ ar:
       role:
         user: "مستخدم"
         firm_admin: "صاحب منشأة"
+        admin: "مشرف"
         super_admin: "مدير النظام"
     firm:
       status:
@@ -99,6 +120,10 @@ ar:
         news: "خبر"
         article: "مقال"
         announcement: "إعلان"
+      review_status:
+        pending: "قيد المراجعة"
+        approved: "معتمد"
+        rejected: "مرفوض"
     subscription:
       status:
         pending: "قيد المراجعة"
@@ -120,6 +145,12 @@ ar:
         subscription_expiring: "تنبيه قرب انتهاء"
         subscription_expired: "انتهاء اشتراك"
         system_announcement: "إعلان إداري"
+        firm_submitted: "منشأة للمراجعة"
+        article_submitted: "خبر للمراجعة"
+        firm_approved: "اعتماد منشأة"
+        firm_rejected: "رفض منشأة"
+        article_approved: "اعتماد خبر"
+        article_rejected: "رفض خبر"
     notification_campaign:
       status:
         scheduled: "مجدولة"

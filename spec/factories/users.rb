@@ -6,6 +6,7 @@ FactoryBot.define do
     role { :user }
 
     trait(:firm_admin)  { role { :firm_admin } }
+    trait(:admin)       { role { :admin } }
     trait(:super_admin) { role { :super_admin } }
 
     # Firm admin with a current (approved, not expired) subscription.

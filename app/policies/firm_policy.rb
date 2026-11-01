@@ -3,11 +3,14 @@ class FirmPolicy < ApplicationPolicy
 
   def index?   = true
   def show?    = true
-  def create?  = user&.can_manage_firms? || false
+  # Any signed-in user; Firms::Create decides whether it goes live or waits for review.
+  def create?  = user.present?
   def update?  = super_admin? || owner?
   def destroy? = super_admin? || owner?
-  # Approve / suspend (setting `status`); sent to the apps in FirmSerializer's `can`.
+  # Approve / suspend by setting `status` through update; sent to the apps in FirmSerializer's `can`.
   def moderate? = super_admin?
+  # Approve / reject a submission (Firms::Review): admins and super admins.
+  def review? = reviewer?
 
   # Only super admins can change the status (approve / suspend).
   def permitted_attributes
@@ -21,9 +24,10 @@ class FirmPolicy < ApplicationPolicy
   end
 
   class Scope < ApplicationPolicy::Scope
-    # Public: visible firms. Owners also see all of their own firms.
+    # Public: visible firms. Owners also see all of their own firms; reviewers see every firm, to
+    # open the submissions they review.
     def resolve
-      return scope.all if super_admin?
+      return scope.all if reviewer?
       return scope.visible if user.nil?
 
       scope.visible.or(scope.where(owner_id: user.id))

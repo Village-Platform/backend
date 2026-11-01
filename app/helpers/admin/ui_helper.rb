@@ -2,7 +2,8 @@ module Admin
   module UiHelper
     # The design has four tones. Anything not listed falls back to gray.
     TONES = {
-      "active" => "green", "current" => "green", "super_admin" => "green", true => "green",
+      "active" => "green", "current" => "green", "approved" => "green", "super_admin" => "green", true => "green",
+      "admin" => "gold",
       "pending" => "gold", "scheduled" => "gold", "firm_admin" => "gold", "announcement" => "gold",
       "rejected" => "red", "suspended" => "red", "deleted" => "red",
       "expired" => "gray", "user" => "gray", "news" => "gray", "article" => "gray", false => "gray"
@@ -75,7 +76,10 @@ module Admin
     # The autocomplete JS binds to every [data-admin-search], finds its listbox through
     # aria-controls and its live-status span through the shared parent. That contract is
     # implicit, so it lives here once rather than in five hand-written call sites.
+    # Admins (reviewers) cannot reach the search endpoint, so they get the plain field.
     def search_combobox(scope, wrapper_class: "searchable-field")
+      return tag.div(capture { yield({}) }, class: wrapper_class) unless current_admin.super_admin?
+
       results_id = "#{scope}-search-results"
       attrs = {
         role: "combobox", "aria-autocomplete": "list", "aria-expanded": "false",

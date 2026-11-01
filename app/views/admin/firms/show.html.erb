@@ -1,29 +1,48 @@
 <%= page_header @firm.name, subtitle: @firm.category.name do %>
   <% if @firm.deleted? %>
     <%= badge("محذوف", "red") %>
-    <%= button_to restore_admin_firm_path(@firm), method: :patch, class: "btn btn-gold" do %>
-      <%= icon(:restore, size: 16) %> استعادة النشاط
-    <% end %>
-    <%= button_to destroy_fully_admin_firm_path(@firm), method: :delete, class: "btn btn-danger",
-          form: { data: { confirm: "هل أنت متأكد من الحذف النهائي للنشاط؟ لا يمكن التراجع عن هذا الإجراء!" } } do %>
-      <%= icon(:trash, size: 16) %> حذف نهائي
+    <% if current_admin.super_admin? %>
+      <%= button_to restore_admin_firm_path(@firm), method: :patch, class: "btn btn-gold" do %>
+        <%= icon(:restore, size: 16) %> استعادة النشاط
+      <% end %>
+      <%= button_to destroy_fully_admin_firm_path(@firm), method: :delete, class: "btn btn-danger",
+            form: { data: { confirm: "هل أنت متأكد من الحذف النهائي للنشاط؟ لا يمكن التراجع عن هذا الإجراء!" } } do %>
+        <%= icon(:trash, size: 16) %> حذف نهائي
+      <% end %>
     <% end %>
   <% else %>
     <%= enum_badge(Firm, :status, @firm.status) %>
-    <% unless @firm.active? %>
+    <% if @firm.rejected? %><%= badge("مرفوض", "red") %><% end %>
+    <% if @firm.pending? || @firm.rejected? || (current_admin.super_admin? && @firm.suspended?) %>
       <%= button_to approve_admin_firm_path(@firm), method: :patch, class: "btn" do %><%= icon(:check, size: 16) %> اعتماد<% end %>
     <% end %>
-    <% unless @firm.suspended? %>
-      <%= button_to suspend_admin_firm_path(@firm), method: :patch, class: "btn btn-ghost",
-            form: { data: { confirm: "إيقاف النشاط وإخفاؤه من التطبيق؟" } } do %><%= icon(:close, size: 16) %> إيقاف<% end %>
+    <% if current_admin.super_admin? %>
+      <% unless @firm.suspended? %>
+        <%= button_to suspend_admin_firm_path(@firm), method: :patch, class: "btn btn-ghost",
+              form: { data: { confirm: "إيقاف النشاط وإخفاؤه من التطبيق؟" } } do %><%= icon(:close, size: 16) %> إيقاف<% end %>
+      <% end %>
+      <%= link_to edit_admin_firm_path(@firm), class: "btn btn-ghost" do %><%= icon(:edit, size: 16) %> تعديل<% end %>
+      <%= button_to admin_firm_path(@firm), method: :delete, class: "btn btn-danger",
+            form: { data: { confirm: "نقل النشاط إلى سلة المحذوفات؟" } } do %><%= icon(:trash, size: 16) %> حذف<% end %>
     <% end %>
-    <%= link_to edit_admin_firm_path(@firm), class: "btn btn-ghost" do %><%= icon(:edit, size: 16) %> تعديل<% end %>
-    <%= button_to admin_firm_path(@firm), method: :delete, class: "btn btn-danger",
-          form: { data: { confirm: "نقل النشاط إلى سلة المحذوفات؟" } } do %><%= icon(:trash, size: 16) %> حذف<% end %>
   <% end %>
 <% end %>
 
-<% if @firm.deleted? %>
+<% if @firm.pending? && !@firm.deleted? %>
+  <section class="card mb-4">
+    <div class="card-header"><h2>مراجعة النشاط</h2></div>
+    <p><small>اعتماد النشاط يرسل إشعاراً لصاحبه. يظهر في التطبيق فقط إذا كان لدى المالك اشتراك ساري.</small></p>
+    <%= form_with url: reject_admin_firm_path(@firm), method: :patch, data: { confirm: "رفض هذا النشاط؟" } do |f| %>
+      <div class="field">
+        <%= f.label :reason, "سبب الرفض" %>
+        <%= f.text_area :reason, required: true, rows: 2, placeholder: "مثال: العنوان أو رقم الهاتف غير صحيح" %>
+      </div>
+      <%= button_tag type: "submit", class: "btn btn-danger" do %><%= icon(:close) %> رفض النشاط<% end %>
+    <% end %>
+  </section>
+<% end %>
+
+<% if @firm.deleted? && current_admin.super_admin? %>
   <div class="card mb-4 border-r-4 border-bad bg-bad/10 p-4 flex flex-wrap items-center justify-between gap-3">
     <div class="flex items-center gap-3">
       <span class="badge badge-red text-xs">نشاط محذوف</span>
@@ -52,7 +71,13 @@
         <small>تظهر فقط إذا كانت مفعّلة واشتراك المالك ساري.</small>
       <% end %>
     </dd>
-    <dt>المالك</dt><dd><%= link_to @firm.owner.name, admin_user_path(@firm.owner) %> — <span class="ltr"><%= @firm.owner.phone %></span></dd>
+    <dt>المالك</dt><dd><%= current_admin.super_admin? ? link_to(@firm.owner.name, admin_user_path(@firm.owner)) : @firm.owner.name %> — <span class="ltr"><%= @firm.owner.phone %></span></dd>
+    <% if @firm.reviewed_at %>
+      <dt>تمت المراجعة</dt><dd><%= fmt_time(@firm.reviewed_at) %> — <%= @firm.reviewed_by&.name %></dd>
+    <% end %>
+    <% if @firm.rejection_reason.present? %>
+      <dt>سبب الرفض</dt><dd class="text-bad"><%= @firm.rejection_reason %></dd>
+    <% end %>
     <dt>الهاتف</dt><dd class="ltr"><%= @firm.phone.presence || "—" %></dd>
     <dt>واتساب</dt><dd class="ltr"><%= @firm.whatsapp.presence || "—" %></dd>
     <dt>العنوان</dt><dd><%= @firm.address.presence || "—" %></dd>

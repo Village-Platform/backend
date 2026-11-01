@@ -19,6 +19,15 @@ module ErrorHandling
       render_error(:unprocessable_content, "invalid_state")
     end
 
+    rescue_from Submissions::ReviewError do
+      render_error(:unprocessable_content, "already_reviewed")
+    end
+
+    # Firm quota (subscription_required) or the cap on submissions waiting for review.
+    rescue_from Submissions::LimitError do |e|
+      render_error(:forbidden, e.code)
+    end
+
     rescue_from ActionController::ParameterMissing do |e|
       render_error(:bad_request, "bad_request", details: { param: e.param })
     end

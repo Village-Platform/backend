@@ -36,6 +36,7 @@ Rails.application.routes.draw do
     resources :firms do
       member do
         patch :approve
+        patch :reject
         patch :suspend
         patch :restore
         delete :destroy_fully
@@ -48,6 +49,8 @@ Rails.application.routes.draw do
     end
     resources :articles do
       member do
+        patch :approve
+        patch :reject
         patch :restore
         delete :destroy_fully
       end
@@ -89,8 +92,19 @@ Rails.application.routes.draw do
         get :icon, on: :member
         resources :firms, only: :index
       end
-      resources :firms
-      resources :articles
+      # approve / reject: admins and super admins review submissions (Firms::Review, Articles::Review).
+      resources :firms do
+        member do
+          patch :approve
+          patch :reject
+        end
+      end
+      resources :articles do
+        member do
+          patch :approve
+          patch :reject
+        end
+      end
 
       get "payment_methods", to: "payment_methods#index"
       get "app_config", to: "app_config#show"

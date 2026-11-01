@@ -99,8 +99,8 @@ Two response envelopes, used everywhere:
 ```
 
 Render through `render_record` / `render_collection` / `render_error`. The `code` is an i18n key
-under `errors.api.*` — adding an error code means adding it to **both** `config/locales/ar.yml`
-and `en.yml`.
+under `errors.api.*` — adding an error code means adding it to `config/locales/ar.yml`, the only API
+locale file (`available_locales` is `[:ar]`; `en.yml` was removed).
 
 ### Layers
 
@@ -136,13 +136,30 @@ These are easy to break from a single file and are covered by request specs:
 - **Renewals stack.** `Subscriptions::Approve` starts the new period at `max(now, latest ends_at)`,
   locks the user row and the subscription, and promotes `user` → `firm_admin`. Notification sending
   happens *outside* the transaction on purpose: a failed notification must never undo an approval.
-- **An owner's edit of an approved firm is re-reviewed.** `Firms::Update` turns an active firm
-  `pending` when its owner changes anything; super admin edits, and edits of pending or suspended
-  firms, keep the status. Firm JSON carries `can: { update, destroy, moderate }` from `FirmPolicy`
+- **An edit can send a firm or article back to review.** `Firms::Update` / `Articles::Update` turn
+  an approved record `pending` when an editor who cannot publish directly changes anything, and an
+  author's edit of a rejected one resubmits it. Reviewer edits, subscribed firm admins' edits, and
+  edits of pending or moderation-suspended records keep the status. Firm JSON carries `can: { update, destroy, moderate }` from `FirmPolicy`
   for the current user, which the apps use to show controls — the policy still decides.
-- **Firm quota is separate from authorization.** `FirmPolicy#create?` only asks
-  `can_manage_firms?`; the plan's `max_firms` is enforced by `User#can_add_firm?`, checked in the
-  controller and answered with `403 subscription_required`. Both checks must stay.
+- **The author decides where a firm or article starts.** `FirmPolicy#create?` / `ArticlePolicy#create?`
+  allow any signed-in user; `Firms::Create` / `Articles::Create` then ask
+  `User#can_publish_directly?` (reviewers always, firm admins while subscribed). Direct publishers
+  go live (firms still within `max_firms` via `can_add_firm?` → `403 subscription_required`);
+  everyone else submits `pending`, capped at `User::MAX_PENDING_SUBMISSIONS` (`403 too_many_pending`),
+  and `Submissions::NotifyReviewers` tells the super admins only (admins review from the
+  dashboard counters). Both creates lock the author row, since both limits count rows. The client never sends a status for this.
+- **Roles: `admin` (3) sits beside `super_admin` as a reviewer** (`User#reviewer?`,
+  `User.reviewers`). It publishes without a subscription, its firms count as visible like a super
+  admin's, and it reviews. On the dashboard it reaches only actions opened with `allow_reviewers`.
+  It cannot lift a moderation suspension (`Firms::Review`). Old app versions receive `role: "admin"`
+  from `/me`.
+- **Review state.** Firms reuse `pending`; a rejected firm is `suspended` **with** `rejection_reason`
+  (`Firm#rejected?`), so old apps never meet a new status string. Articles have `review_status`
+  (pending/approved/rejected, default approved) beside `published_at`, and `Article.published` /
+  `#published?` require approved, as do `Notifications::Destination` and `SyncPushCampaign`, so no
+  push goes out for an unreviewed article. Approval does not bypass `Firm.visible`: a plain user's
+  approved firm shows once they subscribe. Approve / reject go through `Firms::Review` /
+  `Articles::Review` from both the API and the dashboard.
 - **Guards backed by DB indexes:** one pending subscription per user, and `transaction_reference`
   unique per `payment_method`. The race is caught by `rescue_from ActiveRecord::RecordNotUnique`.
 - **Feature flags fail closed.** `GET /api/v1/app_config` returns `FeatureFlag.to_h`: the `feature_flags`
@@ -226,7 +243,7 @@ Arabic (`:ar`) is the default, English is the fallback; API clients pick with `A
 `ApplicationController#switch_locale` reads the first two characters of that header;
 `Admin::BaseController` forces `:ar` regardless.
 
-- API-facing strings go through `config/locales/{ar,en}.yml` — both files.
+- API-facing strings go through `config/locales/ar.yml`.
 - Admin page copy, `notice:` and `alert:` are **hardcoded Arabic** in the views and controllers;
   that's the convention there, don't start extracting it.
 - The exceptions already extracted are `config/locales/admin.{ar,en}.yml` (login page, bulk-action

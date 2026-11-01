@@ -7,5 +7,6 @@ FactoryBot.define do
     status { :active }
 
     trait(:pending) { status { :pending } }
+    trait(:rejected) { status { :suspended }; rejection_reason { "Incomplete" } }
   end
 end

@@ -16,27 +16,33 @@
       </div>
 
       <nav aria-label="القائمة الرئيسية">
-        <%= nav_group "عام" do %>
-          <%= nav_link "لوحة التحكم", admin_root_path, :home, exact: true %>
-          <%= nav_link "الإشعارات", admin_notifications_path, :bell %>
-          <%= nav_link "حملات الإشعارات", admin_notification_campaigns_path, :bell %>
-          <%= nav_link "المواضيع", admin_topics_path, :categories %>
+        <% if current_admin.super_admin? %>
+          <%= nav_group "عام" do %>
+            <%= nav_link "لوحة التحكم", admin_root_path, :home, exact: true %>
+            <%= nav_link "الإشعارات", admin_notifications_path, :bell %>
+            <%= nav_link "حملات الإشعارات", admin_notification_campaigns_path, :bell %>
+            <%= nav_link "المواضيع", admin_topics_path, :categories %>
+          <% end %>
         <% end %>
         <%= nav_group "المحتوى" do %>
-          <%= nav_link "التصنيفات", admin_categories_path, :categories %>
+          <% if current_admin.super_admin? %>
+            <%= nav_link "التصنيفات", admin_categories_path, :categories %>
+          <% end %>
           <%= nav_link "الأنشطة", admin_firms_path, :firms, count: Firm.pending.count %>
-          <%= nav_link "الأخبار والمقالات", admin_articles_path, :articles %>
+          <%= nav_link "الأخبار والمقالات", admin_articles_path, :articles, count: Article.pending.count %>
         <% end %>
-        <%= nav_group "الأشخاص" do %>
-          <%= nav_link "المستخدمون", admin_users_path, :users %>
-          <%= nav_link "الأجهزة", admin_devices_path, :devices %>
-        <% end %>
-        <%= nav_group "المالية" do %>
-          <%= nav_link "الباقات والأسعار", admin_subscription_plans_path, :plans %>
-          <%= nav_link "الاشتراكات", admin_subscriptions_path, :subscriptions, count: Subscription.pending.count %>
-        <% end %>
-        <%= nav_group "الإعدادات" do %>
-          <%= nav_link "الميزات", admin_feature_flags_path, :flag %>
+        <% if current_admin.super_admin? %>
+          <%= nav_group "الأشخاص" do %>
+            <%= nav_link "المستخدمون", admin_users_path, :users %>
+            <%= nav_link "الأجهزة", admin_devices_path, :devices %>
+          <% end %>
+          <%= nav_group "المالية" do %>
+            <%= nav_link "الباقات والأسعار", admin_subscription_plans_path, :plans %>
+            <%= nav_link "الاشتراكات", admin_subscriptions_path, :subscriptions, count: Subscription.pending.count %>
+          <% end %>
+          <%= nav_group "الإعدادات" do %>
+            <%= nav_link "الميزات", admin_feature_flags_path, :flag %>
+          <% end %>
         <% end %>
       </nav>
 
@@ -44,7 +50,7 @@
         <span class="avatar"><%= initials(current_admin.name) %></span>
         <div class="who">
           <strong><%= current_admin.name %></strong>
-          <small>صلاحيات كاملة</small>
+          <small><%= current_admin.super_admin? ? "صلاحيات كاملة" : "مراجعة المحتوى" %></small>
         </div>
         <%= button_to admin_logout_path, method: :delete, class: "icon-btn", title: "تسجيل الخروج",
               form: { data: { confirm: "تسجيل الخروج؟" } } do %>
@@ -63,10 +69,12 @@
           <h1><%= content_for(:title) %></h1>
           <% if content_for?(:subtitle) %><p><%= content_for(:subtitle) %></p><% end %>
         </div>
-        <%= search_combobox("all", wrapper_class: "topbar-search") do |attrs| %>
-          <label class="sr-only" for="admin-global-search">بحث في النظام</label>
-          <%= tag.input id: "admin-global-search", class: "admin-search-input", type: "search",
-                placeholder: "ابحث في الأنشطة والمستخدمين والاشتراكات…", autocomplete: "off", **attrs %>
+        <% if current_admin.super_admin? %>
+          <%= search_combobox("all", wrapper_class: "topbar-search") do |attrs| %>
+            <label class="sr-only" for="admin-global-search">بحث في النظام</label>
+            <%= tag.input id: "admin-global-search", class: "admin-search-input", type: "search",
+                  placeholder: "ابحث في الأنشطة والمستخدمين والاشتراكات…", autocomplete: "off", **attrs %>
+          <% end %>
         <% end %>
         <%= theme_toggle %>
       </header>

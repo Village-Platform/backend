@@ -11,7 +11,15 @@ class User < ApplicationRecord
   # user        -> normal village resident
   # firm_admin  -> firm owner, can add/manage own firms while subscribed
   # super_admin -> developers / platform admins
-  enum :role, { user: 0, firm_admin: 1, super_admin: 2 }, default: :user, validate: true
+  # admin       -> content reviewer: publishes without a subscription and reviews submissions
+  enum :role, { user: 0, firm_admin: 1, super_admin: 2, admin: 3 }, default: :user, validate: true
+
+  # Roles that review submissions and whose own firms show without a subscription.
+  REVIEWER_ROLES = %w[ admin super_admin ].freeze
+  # Pending firms (and, separately, pending articles) one author may have waiting for review.
+  MAX_PENDING_SUBMISSIONS = 3
+
+  scope :reviewers, -> { where(role: REVIEWER_ROLES) }
 
   has_many :firms, foreign_key: :owner_id, inverse_of: :owner, dependent: :restrict_with_error
   has_many :articles, foreign_key: :author_id, inverse_of: :author, dependent: :restrict_with_error
@@ -35,16 +43,27 @@ class User < ApplicationRecord
   end
 
   def can_manage_firms?
-    firm_admin? || super_admin?
+    firm_admin? || reviewer?
+  end
+
+  def reviewer?
+    REVIEWER_ROLES.include?(role)
+  end
+
+  # Whether a new firm or article of this user goes live without review: reviewers always, firm
+  # admins while subscribed. Everyone else submits it for review. The firm quota is a separate
+  # check (can_add_firm?).
+  def can_publish_directly?
+    reviewer? || (firm_admin? && current_subscription.present?)
   end
 
   def current_subscription
     subscriptions.current.includes(:subscription_plan).order(:ends_at).first
   end
 
-  # Super admins are unlimited; firm admins need a current subscription with free slots.
+  # Reviewers are unlimited; firm admins need a current subscription with free slots.
   def can_add_firm?
-    return true if super_admin?
+    return true if reviewer?
 
     subscription = current_subscription
     subscription.present? && firms.count < subscription.subscription_plan.max_firms

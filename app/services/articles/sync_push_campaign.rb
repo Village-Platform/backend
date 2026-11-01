@@ -1,7 +1,8 @@
 module Articles
   # Keeps an article's push campaign in step with the article: created when it has a notify topic
-  # and a publish time, rescheduled when that time moves, canceled when either is cleared. Once the
-  # campaign has gone out (or failed), edits never push again.
+  # and a publish time, rescheduled when that time moves, canceled when either is cleared or the
+  # article leaves review approved. Once the campaign has gone out (or failed), edits never push
+  # again.
   class SyncPushCampaign
     BODY_LENGTH = 140
 
@@ -14,7 +15,7 @@ module Articles
 
     def call
       return @campaign if @campaign && (@campaign.sent? || @campaign.sending? || @campaign.failed?)
-      return cancel unless @article.notify_topic && @article.published_at
+      return cancel unless @article.approved? && @article.notify_topic && @article.published_at
 
       schedule
     end

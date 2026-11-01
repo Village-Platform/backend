@@ -1,10 +1,15 @@
 <%= page_header "الأخبار والمقالات", subtitle: "تظهر لكل مستخدمي التطبيق" do %>
-  <%= link_to new_admin_article_path, class: "btn btn-gold" do %><%= icon(:plus, size: 18) %> إضافة خبر<% end %>
+  <% if current_admin.super_admin? %>
+    <%= link_to new_admin_article_path, class: "btn btn-gold" do %><%= icon(:plus, size: 18) %> إضافة خبر<% end %>
+  <% end %>
 <% end %>
 
 <div class="flex flex-col gap-3 mb-4">
   <div class="flex flex-wrap gap-2 items-center justify-between">
-    <%= filter_tabs :kind, enum_options(Article, :kind) %>
+    <div class="flex flex-wrap gap-2">
+      <%= filter_tabs :kind, enum_options(Article, :kind) %>
+      <%= filter_tabs :review_status, enum_options(Article, :review_status), all_label: "كل الحالات" %>
+    </div>
     <div class="flex gap-2 items-center">
       <%= link_to url_for(filter_params(deleted: params[:deleted] == "only" ? nil : "only", page: nil)),
             class: [ "tab", ("tab-on bg-bad text-white border-bad" if params[:deleted] == "only") ] do %>
@@ -13,7 +18,7 @@
           <span class="badge <%= params[:deleted] == "only" ? "badge-gray" : "badge-red" %>"><%= @deleted_count %></span>
         <% end %>
       <% end %>
-      <% if params[:kind].present? || params[:status].present? || params[:q].present? || params[:deleted].present? %>
+      <% if params[:kind].present? || params[:review_status].present? || params[:q].present? || params[:deleted].present? %>
         <%= link_to "إلغاء الفلاتر", admin_articles_path, class: "btn btn-ghost btn-sm text-xs" %>
       <% end %>
     </div>
@@ -21,6 +26,7 @@
 
   <%= form_with url: admin_articles_path, method: :get, class: "flex flex-wrap gap-2 items-center" do |f| %>
     <%= f.hidden_field :kind, value: params[:kind] if params[:kind].present? %>
+    <%= f.hidden_field :review_status, value: params[:review_status] if params[:review_status].present? %>
     <%= f.hidden_field :deleted, value: params[:deleted] if params[:deleted].present? %>
     <%= search_combobox("articles") do |attrs| %>
       <%= f.search_field :q, value: params[:q], placeholder: "ابحث في عنوان المقال...", class: "w-56", "aria-label": "بحث", **attrs %>
@@ -29,7 +35,7 @@
   <% end %>
 </div>
 
-<%= advanced_filter(url: admin_articles_path, carry: %i[ q kind deleted ]) do |f| %>
+<%= advanced_filter(url: admin_articles_path, carry: %i[ q kind review_status deleted ]) do |f| %>
   <%= filter_text f, :title_cont, "العنوان" %>
   <%= filter_text f, :author_name_cont, "الكاتب" %>
   <%= filter_range f, :published_at, "تاريخ النشر", as: :date %>
@@ -60,6 +66,8 @@
             <td>
               <% if article.deleted? %>
                 <%= badge("محذوف", "red") %>
+              <% elsif !article.approved? %>
+                <%= enum_badge(Article, :review_status, article.review_status) %>
               <% elsif article.published_at.nil? %>
                 <%= badge("مسودة") %>
               <% elsif article.published? %>
@@ -70,7 +78,11 @@
             </td>
             <td><%= article.author.name %></td>
             <td class="actions">
-              <% if article.deleted? %>
+              <% if !current_admin.super_admin? %>
+                <% if article.pending? %>
+                  <%= button_to "اعتماد", approve_admin_article_path(article), method: :patch, class: "btn btn-sm" %>
+                <% end %>
+              <% elsif article.deleted? %>
                 <%= button_to restore_admin_article_path(article), method: :patch, class: "btn btn-gold btn-sm", title: "استعادة" do %>
                   <%= icon(:restore, size: 14) %> استعادة
                 <% end %>
@@ -79,6 +91,9 @@
                   <%= icon(:trash, size: 14) %>
                 <% end %>
               <% else %>
+                <% if article.pending? %>
+                  <%= button_to "اعتماد", approve_admin_article_path(article), method: :patch, class: "btn btn-sm" %>
+                <% end %>
                 <%= link_to edit_admin_article_path(article), class: "btn btn-ghost btn-sm", title: "تعديل" do %><%= icon(:edit, size: 16) %><% end %>
                 <%= button_to admin_article_path(article), method: :delete, class: "btn btn-ghost btn-sm text-bad", title: "حذف مؤقت",
                       form: { data: { confirm: "نقل هذا الخبر إلى المحذوفات؟" } } do %><%= icon(:trash, size: 16) %><% end %>

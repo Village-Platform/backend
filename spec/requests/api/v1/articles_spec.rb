@@ -32,10 +32,11 @@ RSpec.describe "Articles API", type: :request do
     expect(json.dig("data", "author", "id")).to eq(super_admin.id)
   end
 
-  it "forbids firm admins from publishing" do
+  it "submits an unsubscribed firm admin's article for review" do
     post "/api/v1/articles", params: { article: { title: "x", body: "y" } },
                              headers: auth_headers(create(:user, :firm_admin)), as: :json
 
-    expect(response).to have_http_status(:forbidden)
+    expect(response).to have_http_status(:created)
+    expect(json.dig("data", "review_status")).to eq("pending")
   end
 end

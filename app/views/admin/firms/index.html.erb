@@ -1,5 +1,7 @@
 <%= page_header "الأنشطة", subtitle: "#{@meta[:total]} نشاطاً في #{@categories.size} تصنيفاً" do %>
-  <%= link_to new_admin_firm_path, class: "btn" do %><%= icon(:plus, size: 16) %> إضافة نشاط<% end %>
+  <% if current_admin.super_admin? %>
+    <%= link_to new_admin_firm_path, class: "btn" do %><%= icon(:plus, size: 16) %> إضافة نشاط<% end %>
+  <% end %>
 <% end %>
 
 <div class="flex flex-col gap-3 mb-4">
@@ -63,17 +65,22 @@
               <% end %>
             </td>
             <td><%= firm.category.name %></td>
-            <td><%= link_to firm.owner.name, admin_user_path(firm.owner) %></td>
+            <td><%= current_admin.super_admin? ? link_to(firm.owner.name, admin_user_path(firm.owner)) : firm.owner.name %></td>
             <td><%= switch(!firm.deleted? && @visible_ids.include?(firm.id)) %></td>
             <td>
               <% if firm.deleted? %>
                 <%= badge("محذوف", "red") %>
               <% else %>
                 <%= enum_badge(Firm, :status, firm.status) %>
+                <% if firm.rejected? %><%= badge("مرفوض", "red") %><% end %>
               <% end %>
             </td>
             <td class="actions">
-              <% if firm.deleted? %>
+              <% if !current_admin.super_admin? %>
+                <% if firm.pending? %>
+                  <%= button_to "اعتماد", approve_admin_firm_path(firm), method: :patch, class: "btn btn-sm" %>
+                <% end %>
+              <% elsif firm.deleted? %>
                 <%= button_to restore_admin_firm_path(firm), method: :patch, class: "btn btn-gold btn-sm", title: "استعادة" do %>
                   <%= icon(:restore, size: 14) %> استعادة
                 <% end %>
