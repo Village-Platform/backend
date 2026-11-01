@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_30_200500) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_01_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -152,7 +152,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_200500) do
   end
 
   create_table "notifications", force: :cascade do |t|
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.integer "kind", null: false
     t.string "title", null: false
     t.text "body", null: false
@@ -162,10 +162,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_200500) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "campaign_id"
+    t.bigint "device_id"
     t.index ["campaign_id"], name: "index_notifications_on_campaign_id"
     t.index ["dedupe_key"], name: "index_notifications_on_dedupe_key", unique: true, where: "(dedupe_key IS NOT NULL)"
+    t.index ["device_id", "created_at"], name: "index_notifications_on_device_id_and_created_at", where: "(device_id IS NOT NULL)"
     t.index ["user_id", "created_at"], name: "index_notifications_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_notifications_unread_by_user", where: "(read_at IS NULL)"
+    t.check_constraint "num_nonnulls(user_id, device_id) = 1", name: "notifications_one_recipient"
   end
 
   create_table "solid_queue_batch_executions", force: :cascade do |t|
@@ -421,6 +424,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_30_200500) do
   add_foreign_key "firms", "users", column: "owner_id"
   add_foreign_key "notification_campaigns", "articles"
   add_foreign_key "notification_campaigns", "users", column: "created_by_id"
+  add_foreign_key "notifications", "devices", on_delete: :cascade
   add_foreign_key "notifications", "notification_campaigns", column: "campaign_id"
   add_foreign_key "notifications", "users"
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade

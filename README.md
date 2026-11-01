@@ -89,8 +89,8 @@ guest token. Both kinds last 30 days.
 | GET    | `/subscriptions[/:id]`             | user (own)    |
 | POST   | `/subscriptions` (JSON or multipart with `payment_screenshot`) | user |
 | GET    | `/subscriptions/:id/payment_screenshot` | user (own) |
-| GET    | `/notifications?unread=true`       | user          |
-| PATCH  | `/notifications/:id/read`, `/notifications/read_all` | user |
+| GET    | `/notifications?unread=true`       | user, or guest token + `X-Installation-Id` (that install's campaigns) |
+| PATCH  | `/notifications/:id/read`, `/notifications/read_all` | user, or guest token + `X-Installation-Id` |
 | PUT    | `/devices/:installation_id` (`token`, `locale`, `app_version`, `platform`) | public or user — registers the install for push; see `docs/push-notifications.md` |
 | POST   | `/devices/:installation_id/detach` | user (own device) — call on logout |
 | GET    | `/topics` (header `X-Installation-Id`) | public — topics the app can opt into, with `subscribed` |

@@ -3,7 +3,7 @@ module Admin
     before_action :set_notification, only: %i[show destroy]
 
     def index
-      scope = Notification.includes(:user).latest_first
+      scope = Notification.includes(:user, :device).latest_first
       scope = scope.where(kind: params[:kind]) if Notification.kinds.key?(params[:kind])
       scope = scope.where(user_id: params[:user_id]) if params[:user_id].present?
       if params[:status] == "read"
@@ -12,7 +12,7 @@ module Admin
         scope = scope.unread
       end
       if params[:q].present?
-        scope = scope.joins(:user).where(
+        scope = scope.left_joins(:user).where(
           "notifications.title ILIKE :q OR notifications.body ILIKE :q OR users.name ILIKE :q OR users.phone ILIKE :q",
           q: like(params[:q])
         )

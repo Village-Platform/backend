@@ -1,4 +1,5 @@
-# Sends a campaign: one FCM message to its topics, then an inbox row per signed-in recipient.
+# Sends a campaign: one FCM message to its topics, then an inbox row per signed-in recipient and
+# per guest install.
 #
 # Idempotent. The job only proceeds while the campaign is scheduled (or sending, on a retry) and
 # still scheduled for the time it was queued with, so a canceled or rescheduled campaign makes the
@@ -64,20 +65,41 @@ class DeliverCampaignJob < ApplicationJob
     record_push("ok")
   end
 
+  # One row per signed-in recipient and one per guest install. Returns how many were addressed.
   def write_inbox(campaign, destination)
-    user_ids = Topic.recipient_user_ids(campaign.topics.to_a)
+    topics = campaign.topics.to_a
+    common = {
+      campaign_id: campaign.id, kind: Notification.kinds[:system_announcement],
+      title: campaign.title, body: campaign.body, data: destination.to_data
+    }
+    user_ids = Topic.recipient_user_ids(topics)
+    device_ids = Topic.recipient_guest_device_ids(topics)
+    insert_inbox(user_ids, common) { |id| { user_id: id, dedupe_key: "campaign:#{campaign.id}:user:#{id}" } }
+    insert_inbox(device_ids, common) { |id| { device_id: id, dedupe_key: "campaign:#{campaign.id}:device:#{id}" } }
+    user_ids.size + device_ids.size
+  end
+
+  # ON CONFLICT DO NOTHING: a retry skips rows already written. A guest install can be deleted
+  # between reading its id and inserting (its token moved to a new install): the batch then fails
+  # its foreign key, so it is retried once with only the installs that still exist.
+  def insert_inbox(ids, common)
     now = Time.current
-    user_ids.each_slice(INBOX_BATCH) do |ids|
-      rows = ids.map do |user_id|
-        {
-          user_id:, campaign_id: campaign.id, kind: Notification.kinds[:system_announcement],
-          title: campaign.title, body: campaign.body, data: destination.to_data,
-          dedupe_key: "campaign:#{campaign.id}:user:#{user_id}", created_at: now, updated_at: now
-        }
+    ids.each_slice(INBOX_BATCH) do |batch|
+      retried = false
+      begin
+        next if batch.empty?
+
+        rows = batch.map { |id| { **common, **yield(id), created_at: now, updated_at: now } }
+        # A savepoint, so the failed insert does not abort a transaction this runs inside.
+        Notification.transaction(requires_new: true) { Notification.insert_all(rows) }
+      rescue ActiveRecord::InvalidForeignKey
+        raise if retried
+
+        retried = true
+        batch = Device.where(id: batch).ids
+        retry
       end
-      Notification.insert_all(rows) # ON CONFLICT DO NOTHING: a retry skips rows already written
     end
-    user_ids.size
   end
 
   def finish(campaign, status, error: nil, recipients_count: nil)

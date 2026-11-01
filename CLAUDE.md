@@ -157,6 +157,14 @@ These are easy to break from a single file and are covered by request specs:
   inbox for a screen it does not know, so add screens server-side first. Groups and everyone are
   `NotificationCampaign`s to topics (`DeliverCampaignJob`: one topic send + inbox rows, idempotent,
   at-least-once). Contract with the app: `docs/push-notifications.md`.
+- **Guests have an inbox per install: fan-out on write.** A notification belongs to exactly one of
+  `user_id` / `device_id` (check constraint). `DeliverCampaignJob` writes a row per guest device
+  (`Topic.recipient_guest_device_ids`; signed-in devices get their user's row instead), and nothing
+  else ever writes a device row: personal notifications must never reach a guest inbox, because
+  `X-Installation-Id` is not a secret and is all a guest presents. Sign-in hides the device's rows,
+  logout shows them again; nothing is moved. `notifications.device_id` cascades on delete because
+  `Devices::Register` hard-deletes stale installs. Cost grows as campaigns × installs: prune old
+  installs (`last_seen_at`) before it matters, or derive the guest inbox on read.
 - **Topic membership lives in our DB, FCM holds a mirror.** `topics` / `topic_subscriptions` (user or
   guest device) are the truth; `SyncDeviceTopicsJob` reconciles a device with FCM. FCM cannot list
   members, so never "read back" from it. `Topic.key` is the FCM topic name — `attr_readonly`.

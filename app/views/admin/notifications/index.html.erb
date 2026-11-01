@@ -47,7 +47,11 @@
         <% @notifications.each do |n| %>
           <tr>
             <td><%= n.id %></td>
-            <td><%= link_to n.user.name, admin_user_path(n.user), class: "cell-main" %><span class="cell-sub ltr"><%= n.user.phone %></span></td>
+            <% if n.user %>
+              <td><%= link_to n.user.name, admin_user_path(n.user), class: "cell-main" %><span class="cell-sub ltr"><%= n.user.phone %></span></td>
+            <% else %>
+              <td><span class="cell-main">زائر</span><span class="cell-sub ltr"><%= n.device&.installation_id %></span></td>
+            <% end %>
             <td><%= enum_badge(Notification, :kind, n.kind) %></td>
             <td>
               <%= link_to n.title, admin_notification_path(n), class: "cell-main" %>

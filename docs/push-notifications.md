@@ -51,7 +51,7 @@ Authorization: Bearer <jwt>
 ```
 
 The phone becomes a guest: it keeps broadcasts (`all` and the topics it opted into as a guest)
-and stops receiving the previous user's notifications.
+and stops receiving the previous user's notifications. Its guest inbox (section 5) shows again.
 
 ## 3. Topics (opt-in)
 
@@ -95,6 +95,46 @@ handles them.
 
 A target can disappear between send and tap (article deleted, firm suspended): handle the 404 by
 showing the inbox.
+
+## 5. The inbox
+
+Signed in, the inbox is the user's, as it always was:
+
+```http
+GET /api/v1/notifications?unread=true&page=1
+Authorization: Bearer <user jwt>
+```
+
+A guest has an inbox too, per install. It holds only campaigns (pushes to topics, including
+`all`) sent while the install was a guest and subscribed; personal notifications never reach it.
+Send the guest token **and** the install id:
+
+```http
+GET   /api/v1/notifications?unread=true&page=1
+PATCH /api/v1/notifications/:id/read
+PATCH /api/v1/notifications/read_all
+Authorization: Bearer <guest jwt>
+X-Installation-Id: {installationId}
+```
+
+The response is the same envelope for both: `data` is the list, `meta` carries the page fields
+plus `unread_count`.
+
+| Status | Meaning |
+|---|---|
+| 200 | The inbox. An install not registered yet (no FCM token so far) gets an empty one. |
+| 401 `unauthorized` | No user token, and not both the guest token and `X-Installation-Id`. |
+| 403 `forbidden` | The install is signed in: use the user token. |
+| 404 `not_found` | `:id` is not in this inbox. |
+
+The guest inbox belongs to the install, not to a person. Signing in hides it (the user's inbox
+shows instead) and logging out shows it again; nothing moves between the two. It starts empty: a
+campaign sent before the install registered is not in it. Uninstalling, or another install taking
+over the FCM token, deletes it.
+
+The install id is not a credential: whoever knows it can read and mark that guest inbox. That is
+acceptable only because the inbox holds broadcasts everyone could receive. Still treat the id as
+private (section 1).
 
 Ask for `POST_NOTIFICATIONS` (Android 13+) at a meaningful moment, for example after the first
 subscription or when the user opens the inbox, not on first launch.

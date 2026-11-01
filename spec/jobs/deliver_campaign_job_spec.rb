@@ -9,10 +9,12 @@ RSpec.describe DeliverCampaignJob do
   let(:alice) { create(:user) }
   let(:bob) { create(:user) }
 
+  let(:guest) { create(:device) }
+
   before do
     TopicSubscription.create!(topic: news, user: alice)
     TopicSubscription.create!(topic: news, device: create(:device, user: bob))
-    TopicSubscription.create!(topic: news, device: create(:device)) # guest: push only
+    TopicSubscription.create!(topic: news, device: guest)
   end
 
   def campaign(**attrs) = create(:notification_campaign, topics: [ news ], **attrs)
@@ -29,9 +31,10 @@ RSpec.describe DeliverCampaignJob do
     message = fcm.deliveries.sole
     expect(message[:topic]).to eq("news")
     expect(message[:data]).to eq("screen" => "article", "id" => article.id.to_s, "campaign_id" => record.id.to_s)
-    expect(record.reload).to have_attributes(status: "sent", recipients_count: 2, fcm_message_name: "projects/test/messages/1")
+    expect(record.reload).to have_attributes(status: "sent", recipients_count: 3, fcm_message_name: "projects/test/messages/1")
     expect(record.sent_at).to be_present
-    expect(Notification.where(campaign_id: record.id).pluck(:user_id)).to contain_exactly(alice.id, bob.id)
+    expect(Notification.where(campaign_id: record.id).pluck(:user_id, :device_id))
+      .to contain_exactly([ alice.id, nil ], [ bob.id, nil ], [ nil, guest.id ])
     expect(alice.notifications.sole).to have_attributes(kind: "system_announcement", title: "عرض جديد",
                                                         data: { "screen" => "article", "id" => article.id.to_s })
   end
@@ -45,14 +48,49 @@ RSpec.describe DeliverCampaignJob do
     record = create(:notification_campaign, topics: [ Topic.everyone ])
     deliver(record)
     expect(fcm.deliveries.sole[:topic]).to eq("all")
-    expect(record.reload.recipients_count).to eq(User.not_deleted.count)
+    expect(record.reload.recipients_count).to eq(User.not_deleted.count + 1) # + the guest install
+  end
+
+  it "writes a guest install's inbox row with the campaign's content" do
+    article = create(:article)
+    record = campaign(screen: "article", target_id: article.id)
+    deliver(record)
+
+    expect(guest.notifications.sole).to have_attributes(
+      kind: "system_announcement", title: "عرض جديد", user_id: nil, campaign_id: record.id,
+      data: { "screen" => "article", "id" => article.id.to_s }, dedupe_key: "campaign:#{record.id}:device:#{guest.id}"
+    )
+  end
+
+  it "reaches every guest install, and no signed-in one, through the everyone topic" do
+    unsubscribed_guest = create(:device)
+    signed_in = create(:device, user: create(:user))
+
+    deliver(create(:notification_campaign, topics: [ Topic.everyone ]))
+
+    expect(Notification.where.not(device_id: nil).pluck(:device_id)).to contain_exactly(guest.id, unsubscribed_guest.id)
+    expect(signed_in.notifications).to be_empty
+  end
+
+  it "skips a guest install deleted while its batch was being written" do
+    gone = create(:device)
+    TopicSubscription.create!(topic: news, device: gone)
+    allow(Topic).to receive(:recipient_guest_device_ids).and_wrap_original do |original, *args|
+      original.call(*args).tap { gone.delete } # the install disappears after its id was read
+    end
+
+    record = campaign
+    deliver(record)
+
+    expect(record.reload).to be_sent
+    expect(Notification.where.not(device_id: nil).pluck(:device_id)).to eq([ guest.id ])
   end
 
   it "is a no-op when run twice" do
     record = campaign
     2.times { deliver(record) }
     expect(fcm.deliveries.size).to eq(1)
-    expect(Notification.count).to eq(2)
+    expect(Notification.count).to eq(3)
   end
 
   it "skips a canceled campaign" do
@@ -80,7 +118,7 @@ RSpec.describe DeliverCampaignJob do
     deliver(record)
 
     expect(fcm.deliveries).to be_empty
-    expect(Notification.count).to eq(2)
+    expect(Notification.count).to eq(3)
     expect(record.reload).to be_sent
   end
 
@@ -110,7 +148,7 @@ RSpec.describe DeliverCampaignJob do
     record = campaign
     alice.destroy
     deliver(record)
-    expect(Notification.pluck(:user_id)).to eq([ bob.id ])
+    expect(Notification.where.not(user_id: nil).pluck(:user_id)).to eq([ bob.id ])
   end
 
   it "marks failed on AuthError", :metrics do

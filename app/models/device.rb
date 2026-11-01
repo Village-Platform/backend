@@ -4,6 +4,9 @@ class Device < ApplicationRecord
 
   belongs_to :user, optional: true
   has_many :topic_subscriptions, dependent: :delete_all
+  # The guest inbox. Kept while the device is signed in (the app shows the user's inbox then) and
+  # shown again after logout.
+  has_many :notifications, dependent: :delete_all
 
   validates :installation_id, presence: true, length: { maximum: 200 }
   validates :token, presence: true, length: { maximum: 4096 }

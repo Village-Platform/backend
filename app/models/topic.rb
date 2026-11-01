@@ -33,6 +33,15 @@ class Topic < ApplicationRecord
     users.where(id: subscriptions.select(:user_id)).or(users.where(id: via_devices)).ids
   end
 
+  # Guest installs that get an inbox row when a campaign targets these topics. A signed-in device is
+  # left out: its user gets the row.
+  def self.recipient_guest_device_ids(topics)
+    devices = Device.where(user_id: nil)
+    return devices.ids if topics.any?(&:system?)
+
+    devices.where(id: TopicSubscription.where(topic_id: topics.map(&:id)).select(:device_id)).ids
+  end
+
   def devices
     return Device.all if system?
 

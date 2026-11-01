@@ -211,6 +211,19 @@ RSpec.describe "Admin Full CRUD and Soft Deletion", type: :request do
   describe "Notifications management" do
     include ActiveJob::TestHelper
 
+    it "lists, searches and shows a guest install's notification" do
+      device = create(:device, installation_id: "guest-install-9")
+      row = Notification.create!(device:, kind: :system_announcement, title: "إعلان للزوار", body: "نص")
+
+      get "/admin/notifications", params: { q: "للزوار" }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("guest-install-9")
+
+      get "/admin/notifications/#{row.id}"
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("زائر")
+    end
+
     it "views notifications, sends to a specific user, and deletes" do
       target_user = create(:user, name: "محمود حسن")
 

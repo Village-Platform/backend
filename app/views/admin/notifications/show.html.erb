@@ -8,7 +8,11 @@
   <section class="card">
     <div class="card-header"><h2>بيانات الإشعار</h2></div>
     <dl class="details">
-      <dt>المستلم</dt><dd><%= link_to @notification.user.name, admin_user_path(@notification.user) %> — <span class="ltr"><%= @notification.user.phone %></span></dd>
+      <% if @notification.user %>
+        <dt>المستلم</dt><dd><%= link_to @notification.user.name, admin_user_path(@notification.user) %> — <span class="ltr"><%= @notification.user.phone %></span></dd>
+      <% else %>
+        <dt>المستلم</dt><dd>زائر — <span class="ltr"><%= @notification.device&.installation_id %></span></dd>
+      <% end %>
       <dt>النوع</dt><dd><%= enum_badge(Notification, :kind, @notification.kind) %></dd>
       <dt>حالة القراءة</dt>
       <dd>
