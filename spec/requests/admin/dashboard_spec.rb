@@ -5,7 +5,7 @@ RSpec.describe "Admin dashboard", type: :request do
 
   it "renders the four stat tiles" do
     get "/admin"
-    [ "إجمالي الأهالي", "الأنشطة المسجلة", "الاشتراكات الفعالة", "المقالات المنشورة" ].each do |label|
+    [ "إجمالي الأهالي", "الأنشطة المسجلة", "الاشتراكات الفعالة", "إيرادات هذا الشهر" ].each do |label|
       expect(response.body).to include(label)
     end
   end
@@ -33,8 +33,41 @@ RSpec.describe "Admin dashboard", type: :request do
     expect(response.body).to include("لا توجد أنشطة بعد")
   end
 
-  it "does not render a revenue tile" do
+  it "charts seven months of approved revenue, empty months as zero" do
+    travel_to Time.zone.local(2026, 10, 20, 12) do
+      plan = create(:subscription_plan)
+      create(:subscription, :current, subscription_plan: plan, amount_cents: 24_900, reviewed_at: Time.current)
+      create(:subscription, :current, subscription_plan: plan, amount_cents: 9_900, reviewed_at: 2.months.ago)
+      create(:subscription, subscription_plan: plan, amount_cents: 99_900)
+
+      get "/admin"
+
+      cols = Nokogiri::HTML(response.body).css(".chart .chart-col")
+      expect(cols.size).to eq(7)
+      expect(cols.last["title"]).to eq("249 ج.م")
+      expect(cols[-3]["title"]).to eq("99 ج.م")
+      expect(cols[-2]["title"]).to eq("0 ج.م")
+      expect(cols.last.at_css(".chart-bar")["class"]).to include("chart-now")
+    end
+  end
+
+  it "renders the chart flat when there is no revenue" do
     get "/admin"
-    expect(response.body).not_to include("الإيرادات")
+    expect(response).to have_http_status(:ok)
+    expect(Nokogiri::HTML(response.body).css(".chart .chart-col").size).to eq(7)
+  end
+
+  it "lists recent activity newest first" do
+    create(:firm, name: "صيدلية الشفاء")
+    get "/admin"
+    feed = Nokogiri::HTML(response.body).at_css(".feed")
+    expect(feed.text).to include("صيدلية الشفاء")
+  end
+
+  it "links the quick actions" do
+    get "/admin"
+    [ new_admin_firm_path, new_admin_article_path, new_admin_category_path ].each do |path|
+      expect(response.body).to include(path)
+    end
   end
 end

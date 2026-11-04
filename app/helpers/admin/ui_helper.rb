@@ -97,6 +97,11 @@ module Admin
       end
     end
 
+    # Firms and articles waiting for a reviewer: the sidebar badge and the topbar bell.
+    def pending_reviews_count
+      @pending_reviews_count ||= Firm.pending.count + Article.pending.count
+    end
+
     def nav_group(label, &block)
       safe_join([ tag.p(label, class: "nav-section"), capture(&block) ])
     end

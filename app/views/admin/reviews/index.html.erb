@@ -1,0 +1,55 @@
+<%= page_header "طلبات المراجعة", subtitle: "الأنشطة والمقالات التي تنتظر القرار" %>
+
+<div class="grid grid-2">
+  <section class="card">
+    <div class="card-header">
+      <h2>أنشطة بانتظار الاعتماد</h2>
+      <%= link_to "عرض الكل", admin_firms_path(status: "pending") %>
+    </div>
+    <% if @firms.any? %>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>النشاط</th><th>التصنيف</th><th>المالك</th><th></th></tr></thead>
+          <tbody>
+            <% @firms.each do |firm| %>
+              <tr>
+                <td><%= link_to firm.name, admin_firm_path(firm), class: "cell-main" %></td>
+                <td><%= firm.category.name %></td>
+                <td><%= firm.owner.name %></td>
+                <td><%= button_to "اعتماد", approve_admin_firm_path(firm), method: :patch, class: "btn btn-sm" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <%= empty_state("لا توجد أنشطة بانتظار المراجعة") %>
+    <% end %>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2>مقالات بانتظار الاعتماد</h2>
+      <%= link_to "عرض الكل", admin_articles_path(review_status: "pending") %>
+    </div>
+    <% if @articles.any? %>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>المقال</th><th>الكاتب</th><th>منذ</th><th></th></tr></thead>
+          <tbody>
+            <% @articles.each do |article| %>
+              <tr>
+                <td><%= link_to article.title, admin_article_path(article), class: "cell-main" %></td>
+                <td><%= article.author.name %></td>
+                <td><%= time_ago_in_words(article.created_at) %></td>
+                <td><%= button_to "اعتماد", approve_admin_article_path(article), method: :patch, class: "btn btn-sm" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <%= empty_state("لا توجد مقالات بانتظار المراجعة") %>
+    <% end %>
+  </section>
+</div>

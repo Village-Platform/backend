@@ -28,8 +28,11 @@
           <% if current_admin.super_admin? %>
             <%= nav_link "التصنيفات", admin_categories_path, :categories %>
           <% end %>
-          <%= nav_link "الأنشطة", admin_firms_path, :firms, count: Firm.pending.count %>
-          <%= nav_link "الأخبار والمقالات", admin_articles_path, :articles, count: Article.pending.count %>
+          <%= nav_link "الأنشطة", admin_firms_path, :firms %>
+          <%= nav_link "الأخبار والمقالات", admin_articles_path, :articles %>
+        <% end %>
+        <%= nav_group "المراجعة" do %>
+          <%= nav_link "طلبات المراجعة", admin_reviews_path, :check, count: pending_reviews_count %>
         <% end %>
         <% if current_admin.super_admin? %>
           <%= nav_group "الأشخاص" do %>
@@ -75,6 +78,10 @@
             <%= tag.input id: "admin-global-search", class: "admin-search-input", type: "search",
                   placeholder: "ابحث في الأنشطة والمستخدمين والاشتراكات…", autocomplete: "off", **attrs %>
           <% end %>
+        <% end %>
+        <%= link_to admin_reviews_path, class: "bell", title: "طلبات المراجعة", "aria-label": "طلبات المراجعة" do %>
+          <%= icon(:bell, size: 16) %>
+          <% if pending_reviews_count.positive? %><span class="nav-count"><%= pending_reviews_count %></span><% end %>
         <% end %>
         <%= theme_toggle %>
       </header>

@@ -18,6 +18,8 @@
   --color-gold: rgb(var(--gold));
   --color-goldink: rgb(var(--goldink));
   --color-brand: rgb(var(--brand));
+  --color-primary: rgb(var(--primary));
+  --color-onprimary: rgb(var(--onprimary));
   --color-ok: rgb(var(--ok));
   --color-bad: rgb(var(--bad));
   --color-highlight: rgb(var(--highlight));
@@ -27,51 +29,57 @@
 :root {
   --page: 255 255 255;
   --surface: 255 255 255;
-  --surface2: 245 245 245;
+  --surface2: 243 247 245;
   --ink: 0 0 0;
   --muted: 82 82 82;
-  --line: 226 226 226;
+  --line: 224 232 228;
   --gold: 194 141 64;
   --goldink: 122 85 22;
   --brand: 11 55 39;
+  --primary: 15 155 108;
+  --onprimary: 255 255 255;
   --ok: 31 122 77;
   --bad: 179 64 47;
-  --highlight: 253 246 233;
+  --highlight: 230 246 238;
   color-scheme: light;
 }
 
 /* The :not() guard is load-bearing: without it an explicit light choice loses to a dark OS. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --page: 13 17 23;
-    --surface: 22 27 34;
-    --surface2: 33 38 45;
-    --ink: 230 237 243;
-    --muted: 145 152 161;
-    --line: 48 54 61;
+    --page: 9 20 16;
+    --surface: 15 29 23;
+    --surface2: 22 40 32;
+    --ink: 230 240 235;
+    --muted: 150 168 159;
+    --line: 36 58 47;
     --gold: 210 153 34;
     --goldink: 227 179 65;
-    --brand: 47 129 247;
-    --ok: 63 185 80;
+    --brand: 52 199 140;
+    --primary: 22 163 115;
+    --onprimary: 255 255 255;
+    --ok: 63 185 110;
     --bad: 248 81 73;
-    --highlight: 33 38 45;
+    --highlight: 20 52 40;
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --page: 13 17 23;
-  --surface: 22 27 34;
-  --surface2: 33 38 45;
-  --ink: 230 237 243;
-  --muted: 145 152 161;
-  --line: 48 54 61;
+  --page: 9 20 16;
+  --surface: 15 29 23;
+  --surface2: 22 40 32;
+  --ink: 230 240 235;
+  --muted: 150 168 159;
+  --line: 36 58 47;
   --gold: 210 153 34;
   --goldink: 227 179 65;
-  --brand: 47 129 247;
-  --ok: 63 185 80;
+  --brand: 52 199 140;
+  --primary: 22 163 115;
+  --onprimary: 255 255 255;
+  --ok: 63 185 110;
   --bad: 248 81 73;
-  --highlight: 33 38 45;
+  --highlight: 20 52 40;
   color-scheme: dark;
 }
 
@@ -81,7 +89,7 @@
     font-family: "Cairo", system-ui, sans-serif;
   }
   a {
-    @apply text-goldink no-underline;
+    @apply text-primary no-underline;
   }
   h1 {
     @apply text-sm font-bold m-0;
@@ -129,7 +137,7 @@
     @apply bg-surface2 text-ink;
   }
   .nav-link.active {
-    @apply bg-gold text-black font-bold;
+    @apply bg-primary text-onprimary font-bold;
   }
   .nav-link .icon {
     @apply w-4 h-4 shrink-0;
@@ -142,7 +150,7 @@
            inline-grid place-items-center shrink-0;
   }
   .nav-link.active .nav-count {
-    @apply bg-black text-gold;
+    @apply bg-white text-primary;
   }
   .sidebar-footer {
     @apply flex items-center gap-2 p-3 border-t border-line;
@@ -158,7 +166,7 @@
   }
   .avatar {
     @apply w-7 h-7 rounded-full grid place-items-center shrink-0
-           bg-gold text-black font-bold text-xs;
+           bg-primary text-onprimary font-bold text-xs;
   }
   .icon-btn {
     @apply inline-grid place-items-center w-8 h-8 rounded-lg border-0
@@ -263,7 +271,7 @@
            bg-transparent cursor-pointer;
   }
   .seg-on {
-    @apply bg-gold text-black;
+    @apply bg-primary text-onprimary;
   }
 
   /* ---------- page furniture ---------- */
@@ -283,7 +291,7 @@
     @apply flex items-center justify-between gap-2 mb-3;
   }
   .card-header a {
-    @apply text-[10px] text-goldink font-semibold;
+    @apply text-[10px] text-primary font-semibold;
   }
   .grid {
     @apply grid gap-3;
@@ -312,7 +320,7 @@
   }
   .stat-hi,
   .stat.attention {
-    @apply bg-highlight border-gold/40;
+    @apply bg-highlight border-primary/40;
   }
   .stat .label {
     @apply block text-[11px] text-muted;
@@ -321,7 +329,7 @@
     @apply block text-2xl font-black mt-1 leading-none;
   }
   .stat .sub {
-    @apply block text-[10px] mt-1 text-goldink font-semibold;
+    @apply block text-[10px] mt-1 text-primary font-semibold;
   }
   .stat .stat-icon {
     @apply hidden;
@@ -340,11 +348,51 @@
     @apply h-1.5 bg-line rounded-full overflow-hidden;
   }
   .bar-fill {
-    @apply h-full bg-gold rounded-full;
+    @apply h-full bg-primary rounded-full;
+  }
+
+  .quick-actions {
+    @apply flex flex-wrap gap-2;
+  }
+  .stat .sub.down {
+    @apply text-bad;
+  }
+
+  /* Revenue chart: plain flex columns, no JS. Bar height is a % of the tallest month. */
+  .chart {
+    @apply flex items-end gap-2 h-44;
+  }
+  .chart-col {
+    @apply flex-1 h-full flex flex-col justify-end items-center gap-1.5 min-w-0;
+  }
+  .chart-bar {
+    @apply w-full rounded-md bg-line;
+  }
+  .chart-now {
+    @apply bg-primary;
+  }
+  .chart-label {
+    @apply text-[10px] text-muted truncate max-w-full;
+  }
+
+  .feed {
+    @apply list-none m-0 p-0;
+  }
+  .feed-row {
+    @apply flex items-center gap-2 py-2 text-xs text-ink border-b border-line;
+  }
+  .feed li:last-child .feed-row {
+    @apply border-b-0;
+  }
+  .feed-icon {
+    @apply w-6 h-6 rounded-lg grid place-items-center shrink-0 bg-highlight text-primary;
   }
 
   .todo-row {
     @apply flex items-center gap-2 p-2 mb-1.5 rounded-lg bg-highlight text-xs text-ink;
+  }
+  .todo-row .icon {
+    @apply text-primary;
   }
   .todo-row .count {
     @apply font-bold;
@@ -435,14 +483,14 @@
     @apply w-9 h-5 rounded-full p-0.5 flex bg-line justify-start;
   }
   .switch-on {
-    @apply bg-gold justify-end;
+    @apply bg-primary justify-end;
   }
   .switch-knob {
     @apply w-4 h-4 rounded-full bg-white shadow;
   }
   /* A switch that changes state: the read-only .switch inside a button_to. */
   .switch-btn {
-    @apply cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-gold;
+    @apply cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-primary;
   }
 
   .tabs {
@@ -453,17 +501,17 @@
            bg-surface border border-line text-muted;
   }
   .tab-on {
-    @apply bg-gold text-black font-bold border-gold;
+    @apply bg-primary text-onprimary font-bold border-primary;
   }
 
   /* ---------- buttons ---------- */
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 text-xs font-bold
            px-3 py-1.5 rounded-lg whitespace-nowrap cursor-pointer
-           border border-transparent bg-gold text-black transition-colors;
+           border border-transparent bg-primary text-onprimary transition-colors;
   }
   .btn:hover {
-    @apply opacity-90 text-black;
+    @apply opacity-90 text-onprimary;
   }
   .btn-gold {
     @apply bg-gold text-black;
@@ -533,7 +581,7 @@
   input:focus,
   select:focus,
   textarea:focus {
-    @apply outline-none border-gold;
+    @apply outline-none border-primary;
   }
   input[type="tel"],
   input[type="email"] {
@@ -544,7 +592,7 @@
     @apply flex items-center gap-2;
   }
   .checkbox input {
-    @apply w-4 h-4 accent-gold;
+    @apply w-4 h-4 accent-primary;
   }
   .checkbox label {
     @apply m-0;
@@ -596,7 +644,7 @@
       text-xs font-semibold text-ink no-underline hover:bg-surface2;
   }
   .pagination .pagy a[aria-current="page"] {
-    @apply bg-gold/15 border-gold/40 text-goldink;
+    @apply bg-primary/15 border-primary/40 text-primary;
   }
   .pagination .pagy a[aria-disabled="true"]:not([aria-current]) {
     @apply opacity-40 pointer-events-none;
@@ -633,7 +681,7 @@
   .adv-range { @apply grid grid-cols-2 gap-1.5; }
   .adv-filter-actions { @apply flex gap-2 mt-3 pt-3 border-t border-line; }
   .th-sort { @apply text-muted no-underline hover:text-ink; }
-  th[aria-sort="ascending"] .th-sort, th[aria-sort="descending"] .th-sort { @apply text-goldink font-bold; }
+  th[aria-sort="ascending"] .th-sort, th[aria-sort="descending"] .th-sort { @apply text-primary font-bold; }
 
   /* ---------- login ---------- */
   .auth {

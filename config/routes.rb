@@ -25,6 +25,7 @@ Rails.application.routes.draw do
 
     patch "theme", to: "theme#update", as: :theme
     get "search", to: "search#index", as: :search
+    resources :reviews, only: :index
 
     resources :subscriptions do
       member do

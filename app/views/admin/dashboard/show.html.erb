@@ -1,6 +1,15 @@
 <% content_for :title, "نظرة عامة" %>
 <% content_for :subtitle, l(Date.current, format: :long) %>
 
+<div class="quick-actions">
+  <%= link_to new_admin_category_path, class: "btn btn-ghost" do %><%= icon(:plus, size: 14) %>تصنيف<% end %>
+  <%= link_to new_admin_firm_path, class: "btn btn-ghost" do %><%= icon(:plus, size: 14) %>نشاط<% end %>
+  <%= link_to new_admin_article_path, class: "btn btn-ghost" do %><%= icon(:plus, size: 14) %>مقال<% end %>
+  <%= link_to new_admin_notification_campaign_path, class: "btn btn-ghost" do %><%= icon(:bell, size: 14) %>حملة إشعار<% end %>
+  <%= link_to new_admin_user_path, class: "btn btn-ghost" do %><%= icon(:plus, size: 14) %>تعيين مشرف<% end %>
+</div>
+
+<% this_month, last_month = @revenue.last, @revenue[-2] %>
 <div class="stats">
   <%= link_to admin_users_path, class: "stat stat-hi" do %>
     <span class="label">إجمالي الأهالي</span>
@@ -17,25 +26,47 @@
     <span class="label">الاشتراكات الفعالة</span>
     <span class="value"><%= @stats[:current_subscriptions] %></span>
   <% end %>
-  <%= link_to admin_articles_path, class: "stat" do %>
-    <span class="label">المقالات المنشورة</span>
-    <span class="value"><%= @stats[:published_articles] %></span>
+  <%= link_to admin_subscriptions_path(status: "active"), class: "stat" do %>
+    <span class="label">إيرادات هذا الشهر</span>
+    <span class="value"><%= egp(this_month.cents) %></span>
+    <% if last_month.cents.positive? %>
+      <% change = ((this_month.cents - last_month.cents) * 100.0 / last_month.cents).round %>
+      <span class="sub <%= "down" if change.negative? %>"><%= change.positive? ? "+" : "" %><%= change %>٪ عن الشهر السابق</span>
+    <% end %>
   <% end %>
 </div>
 
 <div class="grid grid-2">
   <section class="card">
+    <h2 class="mb-3">الإيرادات الشهرية</h2>
+    <% peak = @revenue.map(&:cents).max %>
+    <div class="chart" role="img" aria-label="الإيرادات الشهرية لآخر <%= @revenue.size %> شهور">
+      <% @revenue.each do |month| %>
+        <div class="chart-col" title="<%= egp(month.cents) %>">
+          <div class="chart-bar <%= "chart-now" if month == this_month %>"
+               style="height: <%= peak.positive? ? [ (month.cents * 100.0 / peak).round, 3 ].max : 3 %>%"></div>
+          <span class="chart-label"><%= l(month.date, format: "%B") %></span>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="card">
     <h2 class="mb-3">تحتاج إجراءك</h2>
     <%= link_to admin_subscriptions_path(status: "pending"), class: "todo-row" do %>
-      <span class="flex-1">اشتراكات بانتظار المراجعة</span>
+      <%= icon(:subscriptions, size: 16) %><span class="flex-1">اشتراكات بانتظار المراجعة</span>
       <b class="count"><%= @stats[:pending_subscriptions] %></b>
     <% end %>
     <%= link_to admin_firms_path(status: "pending"), class: "todo-row" do %>
-      <span class="flex-1">أنشطة بانتظار الموافقة</span>
+      <%= icon(:firms, size: 16) %><span class="flex-1">أنشطة بانتظار الموافقة</span>
       <b class="count"><%= @stats[:pending_firms] %></b>
     <% end %>
+    <%= link_to admin_articles_path(review_status: "pending"), class: "todo-row" do %>
+      <%= icon(:articles, size: 16) %><span class="flex-1">مقالات بانتظار الاعتماد</span>
+      <b class="count"><%= @stats[:pending_articles] %></b>
+    <% end %>
     <%= link_to admin_subscriptions_path(status: "active"), class: "todo-row" do %>
-      <span class="flex-1">اشتراكات تنتهي هذا الأسبوع</span>
+      <%= icon(:clock, size: 16) %><span class="flex-1">اشتراكات تنتهي هذا الأسبوع</span>
       <b class="count"><%= @stats[:expiring_soon] %></b>
     <% end %>
     <% if @stats[:total_deleted].positive? %>
@@ -56,6 +87,27 @@
           <% end %>
         </div>
       </div>
+    <% end %>
+  </section>
+</div>
+
+<div class="grid grid-2">
+  <section class="card">
+    <h2 class="mb-3">آخر النشاطات</h2>
+    <% if @activity.any? %>
+      <ul class="feed">
+        <% @activity.each do |entry| %>
+          <li>
+            <%= link_to entry.path, class: "feed-row" do %>
+              <span class="feed-icon"><%= icon(entry.icon, size: 14) %></span>
+              <span class="flex-1 truncate"><%= entry.text %></span>
+              <small>منذ <%= time_ago_in_words(entry.at) %></small>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <%= empty_state("لا يوجد نشاط بعد") %>
     <% end %>
   </section>
 

@@ -63,7 +63,9 @@ RSpec.describe "Admin review of firm and article submissions", type: :request do
 
       get "/admin/articles", params: { review_status: "pending" }
       expect(response.body).to include(article.title)
-      expect(response.body).to include(%(<span class="nav-count">1</span>))
+      # Firms and articles share one badge now: the review entry in the sidebar and the topbar bell.
+      counts = Nokogiri::HTML(response.body).css("a[href='/admin/reviews'] .nav-count").map(&:text)
+      expect(counts).to eq(%w[ 2 2 ])
     end
 
     it "does not schedule a push for an article until it is approved" do

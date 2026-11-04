@@ -5,7 +5,7 @@ RSpec.describe "Admin shell", type: :request do
 
   it "renders the grouped sidebar with the design's vocabulary" do
     get "/admin"
-    [ "عام", "المحتوى", "الأشخاص", "المالية", "التصنيفات", "الأنشطة", "الباقات والأسعار" ].each do |label|
+    [ "عام", "المحتوى", "الأشخاص", "المالية", "المراجعة", "طلبات المراجعة", "التصنيفات", "الأنشطة", "الباقات والأسعار" ].each do |label|
       expect(response.body).to include(label)
     end
   end
