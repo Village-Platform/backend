@@ -26,8 +26,8 @@ spec:
       storageClassName: local-path
       size: 1Gi
     resources:
-      requests: { cpu: 50m, memory: 100Mi }
-      limits: { memory: 256Mi }
+      requests: { cpu: 50m, memory: 256Mi }
+      limits: { memory: 1Gi }
     # The first boot migrates Grafana's database, which takes minutes on one busy vCPU; the chart's
     # liveness probe (60s + 10 failures) killed it mid-migration.
     livenessProbe:

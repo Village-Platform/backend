@@ -27,8 +27,8 @@ spec:
         size: 5Gi
         storageClass: local-path
       resources:
-        requests: { cpu: 100m, memory: 200Mi }
-        limits: { memory: 400Mi }
+        requests: { cpu: 100m, memory: 512Mi }
+        limits: { memory: 2Gi }
 
     prometheus-node-exporter:
       resources:

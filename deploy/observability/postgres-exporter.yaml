@@ -35,6 +35,8 @@ spec:
             limits: { memory: 64Mi }
           securityContext:
             runAsNonRoot: true
+            # The image's USER is "nobody" (a name); runAsNonRoot can only be verified on a uid.
+            runAsUser: 65534
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
 ---

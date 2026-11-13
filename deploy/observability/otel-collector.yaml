@@ -28,8 +28,8 @@ spec:
             httpGet: { path: /, port: health }
             periodSeconds: 30
           resources:
-            requests: { cpu: 50m, memory: 64Mi }
-            limits: { memory: 200Mi }
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
           # Pod log files are root-only (0640 root:root).
           securityContext:
             runAsUser: 0

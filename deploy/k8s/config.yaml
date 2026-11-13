@@ -25,9 +25,9 @@ data:
   # without redirecting.
   ASSUME_SSL: "1"
   FORCE_SSL: "1"
-  # Telemetry to the collector in deploy/observability. Off: the stack is not installed. Apply
-  # deploy/observability, then uncomment the endpoint. Without it the app sends nothing.
-  # OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.observability.svc:4318
+  # Telemetry to the collector in deploy/observability (installed). Comment the endpoint out to stop
+  # exporting; without it the app sends nothing.
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.observability.svc:4318
   OTEL_SERVICE_NAME: aghour-api
   OTEL_METRIC_EXPORT_INTERVAL: "30000"
   OTEL_TRACES_SAMPLER: parentbased_traceidratio

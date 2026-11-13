@@ -17,16 +17,17 @@ Metrics, traces, logs, dashboards and alerts for the API on the single-node k3s 
 
 | Component | How | Memory (request / limit) | Keeps |
 |---|---|---|---|
-| OpenTelemetry Collector | `otel-collector.yaml`, config in `otel-collector/config.yaml` | 64Mi / 200Mi | — |
-| Prometheus + node-exporter + kube-state-metrics | `prometheus.yaml` (HelmChart) | ~260Mi / ~510Mi | 15 days, ≤ 4GB |
-| Grafana | `grafana.yaml` (HelmChart) | 100Mi / 256Mi | dashboards and alerts come from git |
-| Tempo | `tempo.yaml` (HelmChart) | 100Mi / 300Mi | 72 hours |
-| Loki | `loki.yaml` (HelmChart) | 128Mi / 300Mi | 7 days |
+| OpenTelemetry Collector | `otel-collector.yaml`, config in `otel-collector/config.yaml` | 128Mi / 512Mi | — |
+| Prometheus + node-exporter + kube-state-metrics | `prometheus.yaml` (HelmChart) | ~560Mi / ~2.1Gi | 15 days, ≤ 4GB |
+| Grafana | `grafana.yaml` (HelmChart) | 256Mi / 1Gi | dashboards and alerts come from git |
+| Tempo | `tempo.yaml` (HelmChart) | 256Mi / 1Gi | 72 hours |
+| Loki | `loki.yaml` (HelmChart) | 256Mi / 1Gi | 7 days |
 | postgres-exporter | `postgres-exporter.yaml` | 24Mi / 64Mi | — |
 
-**Capacity.** That's ~670Mi requested and ~1.6Gi in limits on top of k3s, the app and Postgres. It
-does not fit the 2 GB node. Resize to 4 GB first (issue #164, Phase 0), or skip `tempo.yaml` and
-`loki.yaml`: the metrics, dashboards and alerts work without them.
+**Capacity.** That's ~1.5Gi requested and ~5.5Gi in limits on top of k3s, the app and Postgres, sized
+for the 30 GB home server (2026-11-08). The earlier 256–400Mi limits got Grafana OOM-killed as soon as
+the UI was used. On a small node (2–4 GB) lower them again, or skip `tempo.yaml` and `loki.yaml`: the
+metrics, dashboards and alerts work without them.
 
 ## Install
 

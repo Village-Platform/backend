@@ -15,8 +15,8 @@ spec:
       # Default receivers kept (the chart's Service template requires the Jaeger ones); only OTLP
       # HTTP :4318 is used, by the collector.
       resources:
-        requests: { cpu: 50m, memory: 100Mi }
-        limits: { memory: 300Mi }
+        requests: { cpu: 50m, memory: 256Mi }
+        limits: { memory: 1Gi }
     persistence:
       enabled: true
       storageClassName: local-path
