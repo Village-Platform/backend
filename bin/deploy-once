@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# One-shot release: check the tree, push HEAD, deploy to production, verify health.
+#
+#   bin/deploy-once                              deploy to root@192.168.0.12
+#   DEPLOY_HOST=root@1.2.3.4 bin/deploy-once     deploy somewhere else
+#
+# Wraps bin/deploy (see deploy/k8s/README.md). Stops at the first failure.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+DEPLOY_HOST=${DEPLOY_HOST:-root@192.168.0.12}
+HEALTH_URL=${HEALTH_URL:-https://aghour.dorfsys.com/up}
+BRANCH=main
+
+step() { printf '\n==> %s\n' "$*"; }
+
+step "Checking the working tree"
+if [[ "$(git rev-parse --abbrev-ref HEAD)" != "$BRANCH" ]]; then
+  echo "Not on $BRANCH. Switch first." >&2
+  exit 1
+fi
+if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+  echo "Uncommitted changes to tracked files. Commit or stash first." >&2
+  git status --short --untracked-files=no >&2
+  exit 1
+fi
+
+step "Pushing $(git rev-parse --short HEAD) to origin/$BRANCH"
+git push origin "$BRANCH"
+
+step "Deploying to $DEPLOY_HOST"
+DEPLOY_HOST="$DEPLOY_HOST" bin/deploy
+
+step "Checking $HEALTH_URL"
+code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$HEALTH_URL" || true)
+if [[ "$code" != "200" ]]; then
+  echo "Health check returned '$code'. Investigate before going further." >&2
+  echo "Logs: ssh $DEPLOY_HOST 'kubectl -n village logs deploy/web --tail=100'" >&2
+  exit 1
+fi
+echo "OK: $HEALTH_URL returned 200"
