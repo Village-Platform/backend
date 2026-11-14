@@ -31,20 +31,11 @@ module Admin
       end
 
       firm.update!(owner: new_owner)
-      redirect_back_or_to admin_user_path(@user), notice: moved_notice(firm, new_owner)
+      redirect_back_or_to admin_user_path(@user), notice: "تم نقل \"#{firm.name}\" إلى #{new_owner.name}."
     end
 
     def refuse(message)
       redirect_back_or_to admin_user_path(@user), alert: message
-    end
-
-    # Firm.visible keys off the owner's subscription, so a move can hide an approved firm from
-    # the app the instant it is saved. Say so rather than letting it vanish quietly.
-    def moved_notice(firm, new_owner)
-      notice = "تم نقل \"#{firm.name}\" إلى #{new_owner.name}."
-      return notice unless firm.active? && !Firm.visible.exists?(firm.id)
-
-      "#{notice} لن يظهر في التطبيق: اشتراك المالك الجديد غير ساري."
     end
   end
 end

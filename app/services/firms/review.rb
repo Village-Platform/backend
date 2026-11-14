@@ -3,8 +3,7 @@ module Firms
   # moderation suspension takes a super admin); rejecting a pending firm suspends it with a reason the owner sees. Both record who
   # decided and tell the owner, after the commit: a failed notification never undoes a decision.
   #
-  # Approval does not make a firm public on its own: Firm.visible still needs the owner's current
-  # subscription (or a reviewer owner).
+  # Approval makes the firm public: Firm.visible is every active firm.
   class Review
     def self.approve(firm:, reviewer:) = new(firm:, reviewer:).approve
     def self.reject(firm:, reviewer:, reason:) = new(firm:, reviewer:).reject(reason)

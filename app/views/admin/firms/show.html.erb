@@ -31,7 +31,7 @@
 <% if @firm.pending? && !@firm.deleted? %>
   <section class="card mb-4">
     <div class="card-header"><h2>مراجعة النشاط</h2></div>
-    <p><small>اعتماد النشاط يرسل إشعاراً لصاحبه. يظهر في التطبيق فقط إذا كان لدى المالك اشتراك ساري.</small></p>
+    <p><small>اعتماد النشاط يرسل إشعاراً لصاحبه ويُظهره في التطبيق فوراً.</small></p>
     <%= form_with url: reject_admin_firm_path(@firm), method: :patch, data: { confirm: "رفض هذا النشاط؟" } do |f| %>
       <div class="field">
         <%= f.label :reason, "سبب الرفض" %>
@@ -68,7 +68,7 @@
       <% if @firm.deleted? %>
         <small class="text-bad">النشاط في سلة المحذوفات ومخفي تماماً عن الجمهور.</small>
       <% elsif !@visible %>
-        <small>تظهر فقط إذا كانت مفعّلة واشتراك المالك ساري.</small>
+        <small>يظهر فقط بعد اعتماده، وطالما لم يُعلَّق.</small>
       <% end %>
     </dd>
     <dt>المالك</dt><dd><%= current_admin.super_admin? ? link_to(@firm.owner.name, admin_user_path(@firm.owner)) : @firm.owner.name %> — <span class="ltr"><%= @firm.owner.phone %></span></dd>

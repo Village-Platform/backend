@@ -128,9 +128,9 @@ These are easy to break from a single file and are covered by request specs:
   tokens carry `typ: "guest"` and no `sub`, and `user_from_token` refuses any typed token — keep
   that check, or a guest token reaches `User.find_by(id:)`. New endpoints get the guard for free;
   skip it only for something a client must reach before it holds a token.
-- **Firm visibility** is not just `status: active`. `Firm.visible` = active **and** the owner holds a
-  current subscription (or is a super admin). Expiry is purely time-based — no job flips a flag.
-  Any new public listing must go through `Firm.visible` or `policy_scope(Firm)`.
+- **Firm visibility** is `Firm.visible`, currently just `active`: the owner's subscription no longer
+  hides a firm (it still gates direct publishing and `max_firms`). Any new public listing must go
+  through `Firm.visible` or `policy_scope(Firm)`, so the rule stays in one place.
 - **Subscription `status` vs `state`.** The column is `pending/active/rejected`; `#state` derives the
   user-facing `scheduled/current/expired` from `starts_at`/`ends_at`. Serializers expose both.
 - **Renewals stack.** `Subscriptions::Approve` starts the new period at `max(now, latest ends_at)`,
@@ -157,8 +157,7 @@ These are easy to break from a single file and are covered by request specs:
   (`Firm#rejected?`), so old apps never meet a new status string. Articles have `review_status`
   (pending/approved/rejected, default approved) beside `published_at`, and `Article.published` /
   `#published?` require approved, as do `Notifications::Destination` and `SyncPushCampaign`, so no
-  push goes out for an unreviewed article. Approval does not bypass `Firm.visible`: a plain user's
-  approved firm shows once they subscribe. Approve / reject go through `Firms::Review` /
+  push goes out for an unreviewed article. Approval makes a firm public at once. Approve / reject go through `Firms::Review` /
   `Articles::Review` from both the API and the dashboard.
 - **Guards backed by DB indexes:** one pending subscription per user, and `transaction_reference`
   unique per `payment_method`. The race is caught by `rescue_from ActiveRecord::RecordNotUnique`.

@@ -45,7 +45,7 @@ To start fresh: `bin/rails db:reset` (drops and recreates the development databa
 
 | Role          | Can do                                                        |
 |---------------|---------------------------------------------------------------|
-| `user`        | Browse. Default on register. Submits firms and articles **for review** (at most 3 of each waiting); an approved firm shows once its owner subscribes. |
+| `user`        | Browse. Default on register. Submits firms and articles **for review** (at most 3 of each waiting); an approved firm shows at once. |
 | `firm_admin`  | Publishes own firms (within the plan's `max_firms`) and articles **directly** while subscribed; without a current subscription, submits for review like a `user`. |
 | `admin`       | Publishes directly with no subscription or quota (own firms always visible). Reviews submissions: approve / reject in the API and on the dashboard's firm and article pages, nothing else there. |
 | `super_admin` | Everything: categories, news, approve firms, change roles.    |
@@ -79,7 +79,7 @@ guest token. Both kinds last 30 days.
 | POST/PATCH/DELETE | `/categories[/:id]`     | super_admin   |
 | GET    | `/categories/:id/firms`            | public        |
 | GET    | `/categories/:id/icon?v=`          | none — category image; use the `icon_url` from the JSON (cached 1 year per version) |
-| GET    | `/firms?category_id=&q=&mine=true&review=pending` | public — lists only visible firms (active, owner subscribed), for every role; `mine=true` lists all of your own; `review=pending` (admin, super_admin) lists the firms waiting for review |
+| GET    | `/firms?category_id=&q=&mine=true&review=pending` | public — lists only visible (`active`) firms, for every role; `mine=true` lists all of your own; `review=pending` (admin, super_admin) lists the firms waiting for review |
 | GET    | `/firms/:id`                       | public — visible firms; owners, admins and the super admin can also open pending / suspended ones |
 | POST   | `/firms`                           | user — `active` or `pending` by role (see Roles); `403 subscription_required` past the plan quota, `403 too_many_pending` past the review cap |
 | PATCH/DELETE | `/firms/:id`                 | owner / super_admin — an edit of an active firm by an owner who cannot publish directly, or of a rejected firm, sends it to `pending`; firm JSON has `rejection_reason` and `can: { update, destroy, moderate, review }` |
@@ -157,7 +157,7 @@ behave the same everywhere.
 2. Owner submits `POST /subscriptions` with the plan, payment method and transfer reference → `pending`.
 3. Super admin checks the transfer, then `approve` (→ `active`, user promoted to `firm_admin`) or `reject` with a reason.
 4. Renewals stack: a new approval starts when the remaining time ends.
-5. A firm is public only if it is `active` **and** its owner has a current subscription.
+5. A firm is public once it is `active`; the owner's subscription no longer affects visibility.
    No cron job needed — expiry is time-based. `max_firms` on the plan limits how many firms an owner can add.
 
 Safety: one pending request per user, and a transfer reference can't be reused (DB unique indexes).

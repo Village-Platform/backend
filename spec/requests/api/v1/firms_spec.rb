@@ -92,9 +92,18 @@ RSpec.describe "Firms API", type: :request do
   end
 
   describe "visibility after subscription expiry" do
-    it "hides active firms whose owner subscription expired" do
+    it "keeps showing active firms whose owner subscription expired" do
       firm = create(:firm, name: "Expired owner", category:)
       firm.owner.subscriptions.update_all(ends_at: 1.minute.ago)
+
+      get "/api/v1/firms"
+
+      expect(json["data"].map { _1["id"] }).to eq([ firm.id ])
+    end
+
+    it "hides pending and suspended firms" do
+      create(:firm, category:, status: :pending)
+      create(:firm, category:, status: :suspended)
 
       get "/api/v1/firms"
 

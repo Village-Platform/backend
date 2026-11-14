@@ -9,8 +9,8 @@ class Firm < ApplicationRecord
   # pending   -> submitted (or edited) by an owner who cannot publish directly, waiting for review
   # active    -> approved, or created by someone who can publish directly
   # suspended -> hidden by a super admin (moderation), or rejected in review (rejection_reason set)
-  # Note: an active firm is shown publicly only while its owner has a current subscription, so an
-  # approved firm of a plain user stays hidden until that user subscribes.
+  # Note: every active firm is public, whoever owns it. A subscription buys publishing without
+  # review and the plan's firm quota, not visibility.
   acts_as_paranoid
 
   enum :status, { pending: 0, active: 1, suspended: 2 }, default: :pending, validate: true
@@ -21,11 +21,11 @@ class Firm < ApplicationRecord
 
   scope :search, ->(term) { where("firms.name ILIKE ?", "%#{sanitize_sql_like(term)}%") }
 
-  # Public listing: approved firms whose owner is subscribed (or is a reviewer).
-  scope :visible, -> {
-    active.where(owner_id: Subscription.current.select(:user_id))
-          .or(active.where(owner_id: User.reviewers.select(:id)))
-  }
+  # Public listing: every approved firm. Keep reading through this scope rather than `active`, so the
+  # rule stays in one place. To tie visibility to the owner's subscription again:
+  #   active.where(owner_id: Subscription.current.select(:user_id))
+  #         .or(active.where(owner_id: User.reviewers.select(:id)))
+  scope :visible, -> { active }
 
   validates :name, presence: true, length: { maximum: 150 }
   validates :latitude, numericality: { greater_than_or_equal_to: -90, less_than_or_equal_to: 90 }, allow_nil: true

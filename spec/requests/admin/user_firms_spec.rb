@@ -62,16 +62,14 @@ RSpec.describe "Admin user firms", type: :request do
       expect(firm.reload.owner).to eq(owner)
     end
 
-    # Firm.visible keys off the owner's subscription, so a reassignment can hide a firm
-    # from the Android app the instant it is saved.
-    it "drops the firm out of the public listing when the new owner is not subscribed" do
+    # Visibility does not depend on the owner, so a reassignment never hides a firm.
+    it "keeps the firm in the public listing when the new owner is not subscribed" do
       unsubscribed = create(:user, :firm_admin)
-      expect(Firm.visible).to include(firm)
 
       post "/admin/users/#{unsubscribed.id}/firms", params: { firm_id: firm.id }
 
       expect(firm.reload.owner).to eq(unsubscribed)
-      expect(Firm.visible).not_to include(firm)
+      expect(Firm.visible).to include(firm)
     end
 
     it "prefills the owner when creating a firm for this user" do

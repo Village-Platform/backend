@@ -161,13 +161,12 @@ RSpec.describe "Submissions and review", type: :request do
       end
     end
 
-    it "keeps an approved firm of a user without a subscription out of the public list" do
-      patch "/api/v1/firms/#{firm.id}/approve", headers: auth_headers(admin)
-
+    it "lists an approved firm of a user without a subscription" do
       get "/api/v1/firms"
       expect(json["data"]).to be_empty
 
-      create(:subscription, :current, user:)
+      patch "/api/v1/firms/#{firm.id}/approve", headers: auth_headers(admin)
+
       get "/api/v1/firms"
       expect(json["data"].map { _1["id"] }).to eq([ firm.id ])
     end
