@@ -26,3 +26,6 @@
 
 # Ignore Secrets files
 /config/secrets
+
+fcm_service_account.json
+
