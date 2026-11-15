@@ -12,7 +12,7 @@ module Fcm
   # subscribe/unsubscribe to the topicSubscriptions REST API or a gem version that uses it.
   #
   # FCM_SERVICE_ACCOUNT_JSON holds the service-account key itself, or a path to it (relative to the
-  # app root, e.g. config/fcm/dev/service-account.json, which is git-ignored). Without it
+  # app root, e.g. fcm_service_account.json, which is git-ignored by name). Without it
   # (development without Firebase, CI) every call is a logged no-op.
   class Client
     MAX_CONDITION_TOPICS = 5
