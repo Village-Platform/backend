@@ -11,9 +11,9 @@ module Fcm
   # which Google removes on 2027-09-29 ("Manage topics" in the FCM docs). Before then, move
   # subscribe/unsubscribe to the topicSubscriptions REST API or a gem version that uses it.
   #
-  # FCM_SERVICE_ACCOUNT_JSON holds the service-account key itself, or a path to it (relative to the
-  # app root, e.g. fcm_service_account.json, which is git-ignored by name). Without it
-  # (development without Firebase, CI) every call is a logged no-op.
+  # FCM_SERVICE_ACCOUNT_JSON holds the service-account key itself, as one line of JSON, injected from
+  # the environment (a k8s secret in production, .env locally). The app never reads a key file.
+  # Without it (development without Firebase, CI) every call is a logged no-op.
   class Client
     MAX_CONDITION_TOPICS = 5
     MAX_BATCH_TOKENS = 1000 # Instance ID batchAdd / batchRemove limit
@@ -122,24 +122,23 @@ module Fcm
     end
 
     # Fails at boot-time use with an actionable message rather than with an obscure OAuth error on
-    # the first push. The usual mistake is the Android google-services.json, which cannot send.
+    # the first push. The usual mistakes: a file path instead of the JSON, or the Android
+    # google-services.json, which cannot send.
     def load_credentials(value)
       return if value.blank?
 
-      json = value.lstrip.start_with?("{") ? value : read_key_file(value)
+      json = value.strip
+      unless json.start_with?("{")
+        raise ArgumentError, "FCM_SERVICE_ACCOUNT_JSON must hold the service-account JSON itself, on one line, " \
+                             "not a file path. Build it with: jq -c . fcm_service_account.json"
+      end
+
       parsed = JSON.parse(json)
       return json if parsed["type"] == "service_account" && parsed["private_key"].present?
 
       kind = parsed.key?("project_info") ? "the Android google-services.json" : "not a service-account key"
       raise ArgumentError, "FCM_SERVICE_ACCOUNT_JSON is #{kind}, which cannot send. Use a service-account " \
                            "private key: Firebase console > Project settings > Service accounts > Generate new private key."
-    end
-
-    def read_key_file(path)
-      full = Pathname(path).absolute? ? Pathname(path) : Rails.root.join(path)
-      raise ArgumentError, "FCM_SERVICE_ACCOUNT_JSON points to #{path}, which does not exist" unless full.file?
-
-      full.read
     end
 
     def error_for(code, body, retry_after_header)

@@ -157,14 +157,10 @@ RSpec.describe Fcm::Client do
   end
 
   describe "credentials" do
-    it "reads the key from a file path" do
-      Tempfile.create([ "fcm", ".json" ]) do |file|
-        file.write(key_json)
-        file.flush
-        client = described_class.new(credentials_json: file.path, sender:)
-        expect(client).to be_enabled
-        expect(client.send_to_token("t", payload)).to eq("projects/p/messages/1")
-      end
+    it "takes the key JSON from the environment value" do
+      client = described_class.new(credentials_json: key_json, sender:)
+      expect(client).to be_enabled
+      expect(client.send_to_token("t", payload)).to eq("projects/p/messages/1")
     end
 
     it "rejects the Android google-services.json with a clear message" do
@@ -173,9 +169,9 @@ RSpec.describe Fcm::Client do
         .to raise_error(ArgumentError, /google-services\.json.*service-account/)
     end
 
-    it "names a path that does not exist" do
-      expect { described_class.new(credentials_json: "config/fcm/missing.json") }
-        .to raise_error(ArgumentError, %r{config/fcm/missing\.json})
+    it "rejects a file path: the key must be the JSON itself" do
+      expect { described_class.new(credentials_json: "fcm_service_account.json") }
+        .to raise_error(ArgumentError, /JSON itself.*not a file path/)
     end
   end
 
