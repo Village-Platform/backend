@@ -10,7 +10,7 @@ class PushNotificationJob < ApplicationJob
     device = Device.find_by(id: device_id)
     return unless notification && device && device.user_id == notification.user_id
 
-    Fcm.client.send_to_token(device.token, payload_for(notification))
+    Fcm.client.send_to_token(device.token, payload_for(notification, device))
     record_push("ok")
   rescue Fcm::Unregistered
     device.destroy
@@ -23,12 +23,15 @@ class PushNotificationJob < ApplicationJob
 
   private
 
-  def payload_for(notification)
-    Fcm::Message.payload(
-      title: notification.title,
-      body: notification.body,
-      data: notification.data.merge("notification_id" => notification.id)
-    )
+  # The app routes a tap by screen + id; a dashboard browser gets the page to open as well.
+  def payload_for(notification, device)
+    data = notification.data.merge("notification_id" => notification.id)
+    data["admin_path"] = admin_path_for(notification) if device.web?
+    Fcm::Message.payload(title: notification.title, body: notification.body, data:)
+  end
+
+  def admin_path_for(notification)
+    Notifications::Destination.new(screen: notification.data["screen"] || "none", id: notification.data["id"]).admin_path
   end
 
   def push_source = "system"

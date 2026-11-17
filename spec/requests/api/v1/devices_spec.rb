@@ -53,6 +53,21 @@ RSpec.describe "Devices API", type: :request do
     expect(Device.sole.token).to eq("token-1")
   end
 
+  it "refuses the web platform: browsers register through the dashboard" do
+    register(platform: "web")
+
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(Device.count).to eq(0)
+  end
+
+  it "refuses to take over a dashboard browser, even signed in" do
+    browser = create(:device, installation_id: "web-1", platform: "web", user: create(:user, :super_admin))
+    register("web-1", token: "attacker", headers: auth_headers(user))
+
+    expect(response).to have_http_status(:forbidden)
+    expect(browser.reload).to have_attributes(token: browser.token, user_id: browser.user_id)
+  end
+
   it "lets the install itself recover its device without a bearer" do
     topic = create(:topic, key: "owners")
     TopicSubscription.create!(topic:, user:)

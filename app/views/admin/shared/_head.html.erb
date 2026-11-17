@@ -12,6 +12,16 @@
 <link rel="icon" href="/brand/web/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="/brand/web/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="/brand/web/apple-touch-icon.png">
+<%# Installable as an app (PWA). The worker never caches admin pages; see app/views/pwa/service-worker.js. %>
+<link rel="manifest" href="<%= pwa_manifest_path(format: :json) %>">
+<meta name="apple-mobile-web-app-title" content="أجهور">
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("<%= pwa_service_worker_path(format: :js) %>", { scope: "/admin" });
+    });
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
