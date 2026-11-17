@@ -12,12 +12,13 @@ data:
   SOLID_QUEUE_IN_PUMA: "1"
   # "1" = every /api/v1 call needs a user or guest token. Flip it once aghour.auth.tokenless_requests
   # {result="allowed"} is near zero, i.e. old app versions are gone; set it back to "0" to roll back.
-  API_TOKEN_REQUIRED: "0"
+  API_TOKEN_REQUIRED: "1"
   RAILS_LOG_LEVEL: info
   CORS_ORIGINS: "*"
-  SUPER_ADMIN_PHONE: "01000000000"
-  INSTAPAY_ADDRESS: yourname@instapay
-  VODAFONE_CASH_NUMBER: 010XXXXXXXX
+  SUPER_ADMIN_PHONE: "01017102923"
+  SUPER_ADMIN_PASSWORD: "Password1"
+  INSTAPAY_ADDRESS: "01287303441"
+  VODAFONE_CASH_NUMBER: "01017102923"
   # Files go to PostgreSQL (stored_files) so the web pod stays stateless.
   ACTIVE_STORAGE_SERVICE: database
   # Cloudflare terminates TLS for aghour.dorfsys.com. ASSUME_SSL makes Rails treat every request as
