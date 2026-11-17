@@ -11,7 +11,7 @@ class ArticleSerializer
       published_at: article.published_at,
       review_status: article.review_status,
       rejection_reason: article.rejection_reason,
-      author: { id: article.author.id, name: article.author.name },
+      author: { id: article.author.id, name: article.author.try(:name) },
       can: { update: policy.update?, destroy: policy.destroy?, review: policy.review? }
     }
   end

@@ -76,7 +76,7 @@
                 <%= badge("مجدول", "gold") %> <small><%= fmt_time(article.published_at) %></small>
               <% end %>
             </td>
-            <td><%= article.author.name %></td>
+            <td><%= article.author.try(:name) %></td>
             <td class="actions">
               <% if !current_admin.super_admin? %>
                 <% if article.pending? %>

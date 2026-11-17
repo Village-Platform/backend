@@ -1,6 +1,13 @@
 # An app install that can receive pushes. Guests have no user.
+#
+# "web" is a dashboard browser (web push, Admin::PushDevicesController): it always belongs to an
+# admin, gets only that admin's personal pushes and never joins topics, so campaigns stay with the
+# apps. The mobile API accepts APP_PLATFORMS only.
 class Device < ApplicationRecord
-  PLATFORMS = %w[ android ].freeze
+  PLATFORMS = %w[ android web ].freeze
+  APP_PLATFORMS = %w[ android ].freeze
+
+  scope :app, -> { where(platform: APP_PLATFORMS) }
 
   belongs_to :user, optional: true
   has_many :topic_subscriptions, dependent: :delete_all
@@ -11,6 +18,8 @@ class Device < ApplicationRecord
   validates :installation_id, presence: true, length: { maximum: 200 }
   validates :token, presence: true, length: { maximum: 4096 }
   validates :platform, inclusion: { in: PLATFORMS }
+
+  def web? = platform == "web"
 
   # Topics the device belongs to, directly or through its user. The everyone topic is implicit.
   def topics

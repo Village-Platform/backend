@@ -31,11 +31,20 @@ module Admin
     end
 
     def destroy
+      forget_push_device
       reset_session
       redirect_to admin_login_path, notice: I18n.t("admin.sessions.signed_out")
     end
 
     private
+
+    # A browser stops receiving the admin's pushes at logout, not only when it is closed: the next
+    # person at a shared computer must not see them. The id comes from this signed session, so it
+    # can only name the browser that registered it.
+    def forget_push_device
+      installation_id = session[:push_installation_id] or return
+      Device.where(platform: "web", installation_id:).destroy_all
+    end
 
     def use_arabic(&action)
       I18n.with_locale(:ar, &action)

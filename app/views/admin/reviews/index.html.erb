@@ -40,7 +40,7 @@
             <% @articles.each do |article| %>
               <tr>
                 <td><%= link_to article.title, admin_article_path(article), class: "cell-main" %></td>
-                <td><%= article.author.name %></td>
+                <td><%= article.author.try(:name) %></td>
                 <td><%= time_ago_in_words(article.created_at) %></td>
                 <td><%= button_to "اعتماد", approve_admin_article_path(article), method: :patch, class: "btn btn-sm" %></td>
               </tr>

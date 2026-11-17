@@ -34,9 +34,10 @@ class Topic < ApplicationRecord
   end
 
   # Guest installs that get an inbox row when a campaign targets these topics. A signed-in device is
-  # left out: its user gets the row.
+  # left out: its user gets the row. App installs only: a dashboard browser left without a user (its
+  # admin's account deleted) is not a guest and must not start collecting campaigns.
   def self.recipient_guest_device_ids(topics)
-    devices = Device.where(user_id: nil)
+    devices = Device.app.where(user_id: nil)
     return devices.ids if topics.any?(&:system?)
 
     devices.where(id: TopicSubscription.where(topic_id: topics.map(&:id)).select(:device_id)).ids
