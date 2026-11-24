@@ -64,6 +64,8 @@ module Admin
       end
 
       if @user.update(attrs)
+        # A new password revokes the admin's sessions; keep this one, the one that changed it.
+        AdminSession.remember_token_version(session, @user) if @user == current_admin
         redirect_to admin_user_path(@user), notice: "تم حفظ التعديلات."
       else
         render :edit, status: :unprocessable_content

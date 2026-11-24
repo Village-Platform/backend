@@ -23,6 +23,9 @@ gem "acts_as_paranoid", "~> 0.11.0"
 gem "bcrypt", "~> 3.1.7"
 gem "jwt", "~> 3.1"
 gem "pundit", "~> 2.5"
+# Reviewer two-factor sign-in: RFC 6238 codes and the setup QR (rendered as inline SVG).
+gem "rotp", "~> 6.3"
+gem "rqrcode", "~> 3.1"
 
 # API helpers
 gem "rack-cors"

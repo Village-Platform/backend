@@ -7,9 +7,14 @@ module Api
         render_record(current_user, UserSerializer)
       end
 
+      # A new password revokes every token of this user, including the one on this request, so the
+      # response carries a replacement in meta.token. Clients that ignore it are signed out on their
+      # next call (a 401), which is safe, only abrupt.
       def update
         current_user.update!(me_params)
-        render_record(current_user, UserSerializer)
+        return render_record(current_user, UserSerializer) unless current_user.saved_change_to_token_version?
+
+        render json: { data: UserSerializer.render(current_user), meta: { token: issue_token_for(current_user) } }
       end
 
       # DELETE /api/v1/me  { "password": "..." }

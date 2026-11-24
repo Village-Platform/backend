@@ -36,6 +36,12 @@ module Admin
     def require_admin
       return if current_admin
 
+      # Someone between the password and the code, perhaps in another tab, goes back to that step.
+      # Resetting here would drop the pending sign-in and the CSRF token their open form carries.
+      if (pending = AdminSession.pending_reviewer(session))
+        return redirect_to(pending.totp_enabled? ? new_admin_second_factor_path : new_admin_authenticator_path)
+      end
+
       reset_session
       redirect_to admin_login_path, alert: "يجب تسجيل الدخول أولاً."
     end

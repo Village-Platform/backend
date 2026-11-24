@@ -1,0 +1,27 @@
+<% content_for(:title, t("admin.second_factors.title")) %>
+<div class="auth">
+  <section class="auth-panel">
+    <div class="auth-card">
+      <div class="logo"><%= brand_logo %></div>
+      <h1><%= t("admin.second_factors.title") %></h1>
+      <p class="subtitle"><%= t("admin.second_factors.subtitle") %></p>
+
+      <%= render "admin/shared/auth_flash" %>
+
+      <%= form_with url: admin_second_factor_path, method: :post do |f| %>
+        <div class="field">
+          <%= f.label :otp, t("admin.second_factors.code") %>
+          <%# Not inputmode=numeric: a recovery code has letters. %>
+          <%= f.text_field :otp, required: true, autofocus: true, autocomplete: "one-time-code",
+                dir: "ltr", maxlength: 12, spellcheck: false, class: "otp-input" %>
+          <p class="hint"><%= t("admin.second_factors.recovery_hint") %></p>
+        </div>
+        <%= f.button t("admin.second_factors.submit"), type: "submit", class: "btn" %>
+      <% end %>
+
+      <p class="auth-foot"><%= link_to t("admin.second_factors.back"), admin_login_path %></p>
+    </div>
+  </section>
+
+  <%= render "admin/shared/auth_visual" %>
+</div>

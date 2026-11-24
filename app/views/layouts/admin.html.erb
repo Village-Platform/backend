@@ -47,6 +47,11 @@
             <%= nav_link "الميزات", admin_feature_flags_path, :flag %>
           <% end %>
         <% end %>
+        <% if ReviewerMfa.may_enroll?(current_admin) %>
+          <%= nav_group "الحساب" do %>
+            <%= nav_link t("admin.authenticators.nav"), new_admin_authenticator_path, :check %>
+          <% end %>
+        <% end %>
       </nav>
 
       <div class="sidebar-footer">
