@@ -5,7 +5,7 @@
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{ printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2 }'
 
-setup: ## Start PostgreSQL, install gems, prepare the database
+build: ## Start PostgreSQL, install gems, prepare the database
 	docker compose up -d db
 	bin/setup --skip-server
 
@@ -20,9 +20,6 @@ restart:
 
 db: ## Start PostgreSQL (host port 5434)
 	docker compose up -d db
-
-server: db ## Run the Rails server
-	bin/rails s
 
 css: ## Rebuild the admin CSS on change
 	bin/rails tailwindcss:watch
