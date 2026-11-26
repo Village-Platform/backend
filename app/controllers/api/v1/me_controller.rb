@@ -8,8 +8,18 @@ module Api
       end
 
       def update
-        current_user.update!(me_params)
+        attrs = me_params
+        if credentials_change?(attrs) && !current_user.authenticate(params[:user][:current_password].to_s)
+          return render_error(:unprocessable_content, "invalid_password")
+        end
+
+        current_user.assign_attributes(attrs)
+        current_user.save!(context: :profile_update)
         render_record(current_user, UserSerializer)
+      rescue ActiveRecord::RecordInvalid => e
+        raise unless e.record.errors.of_kind?(:phone, :taken)
+
+        render_error(:unprocessable_content, "phone_taken", details: e.record.errors.to_hash(true))
       end
 
       # DELETE /api/v1/me  { "password": "..." }
@@ -26,7 +36,12 @@ module Api
       private
 
       def me_params
-        params.require(:user).permit(:name, :email, :password, :password_confirmation)
+        params.require(:user).permit(:name, :email, :phone, :password, :password_confirmation)
+      end
+
+      def credentials_change?(attrs)
+        attrs[:password].present? ||
+          (attrs.key?(:phone) && User.normalize_value_for(:phone, attrs[:phone]) != current_user.phone)
       end
     end
   end

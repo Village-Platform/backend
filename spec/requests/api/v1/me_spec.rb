@@ -1,6 +1,107 @@
 require "rails_helper"
 
 RSpec.describe "Me API", type: :request do
+  describe "PATCH /api/v1/me" do
+    let(:user) { create(:user, name: "Khaled Elabady", phone: "01012345678", email: "k@example.com", password: "password123") }
+
+    def update_me(attrs)
+      patch "/api/v1/me", params: { user: attrs }, headers: auth_headers(user), as: :json
+    end
+
+    it "updates the name, email and phone" do
+      update_me(name: "Khaled Ali", email: "New@Example.com", phone: "0119 876 5432", current_password: "password123")
+
+      expect(response).to have_http_status(:ok)
+      expect(json["data"]).to include("name" => "Khaled Ali", "email" => "new@example.com", "phone" => "01198765432")
+    end
+
+    it "removes the email when it is sent empty" do
+      update_me(email: "")
+
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.email).to be_nil
+    end
+
+    it "rejects a malformed email" do
+      update_me(email: "khaled@gmail")
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json.dig("error", "code")).to eq("validation_failed")
+      expect(json.dig("error", "details")).to have_key("email")
+    end
+
+    it "rejects a phone that is not an Egyptian mobile number" do
+      %w[ 0101234 01312345678 +201012345678 ].each do |phone|
+        update_me(phone:, current_password: "password123")
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json.dig("error", "details")).to have_key("phone")
+      end
+      expect(user.reload.phone).to eq("01012345678")
+    end
+
+    it "keeps an old-format phone valid when the phone is not changed" do
+      user.update_columns(phone: "+201012345678")
+      update_me(name: "Khaled")
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "answers phone_taken for a phone another account holds, with every field's errors" do
+      create(:user, phone: "01198765432")
+      update_me(phone: "01198765432", email: "bad", current_password: "password123")
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json.dig("error", "code")).to eq("phone_taken")
+      expect(json.dig("error", "details").keys).to contain_exactly("phone", "email")
+      expect(user.reload.phone).to eq("01012345678")
+    end
+
+    it "lets the user log in with the new phone" do
+      update_me(phone: "01598765432", current_password: "password123")
+
+      post "/api/v1/auth/login", params: { phone: "01598765432", password: "password123" }, as: :json
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "requires the current password to change the phone" do
+      [ {}, { current_password: "wrong-pass" } ].each do |extra|
+        update_me(phone: "01198765432", **extra)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json.dig("error", "code")).to eq("invalid_password")
+      end
+      expect(user.reload.phone).to eq("01012345678")
+    end
+
+    it "requires the current password to change the password" do
+      update_me(password: "new-password1", password_confirmation: "new-password1", current_password: "wrong-pass")
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json.dig("error", "code")).to eq("invalid_password")
+      expect(user.reload.authenticate("password123")).to be_truthy
+    end
+
+    it "changes the password with the current one" do
+      update_me(password: "new-password1", password_confirmation: "new-password1", current_password: "password123")
+
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.authenticate("new-password1")).to be_truthy
+    end
+
+    it "needs no password for the name, the email, or resending the same phone" do
+      update_me(name: "Khaled Ali", email: "", phone: "010 1234 5678")
+
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.name).to eq("Khaled Ali")
+    end
+
+    it "does not let the user change their role" do
+      update_me(role: "super_admin")
+      expect(user.reload).to be_user
+    end
+  end
+
   describe "DELETE /api/v1/me" do
     let(:user) { create(:user, password: "password123") }
 
