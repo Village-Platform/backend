@@ -41,7 +41,7 @@ module AghourServices
     # app versions without guest tokens keep working; flip it once tokenless traffic has died down.
     config.x.api_token_required = ENV["API_TOKEN_REQUIRED"] == "1"
 
-    # Image variants (thumbnails) with libvips (installed in Dockerfile.vercel).
+    # Image variants (thumbnails) with libvips (installed in the Dockerfile).
     config.active_storage.variant_processor = :vips
 
     config.generators do |g|

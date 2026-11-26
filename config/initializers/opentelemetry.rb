@@ -1,6 +1,6 @@
 # Traces and metrics through OpenTelemetry, exported over OTLP to the collector in the cluster
-# (deploy/observability). Off unless OTEL_EXPORTER_OTLP_ENDPOINT is set, so development, test and
-# Vercel run without a collector, and Observability::Metrics records nothing.
+# (deploy/observability). Off unless OTEL_EXPORTER_OTLP_ENDPOINT is set, so development and test
+# run without a collector, and Observability::Metrics records nothing.
 #
 # Standard OTEL_* variables are read by the SDK: OTEL_SERVICE_NAME, OTEL_TRACES_SAMPLER(_ARG),
 # OTEL_METRIC_EXPORT_INTERVAL, OTEL_SDK_DISABLED.

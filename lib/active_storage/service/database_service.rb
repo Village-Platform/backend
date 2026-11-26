@@ -3,7 +3,7 @@ require "active_storage/service"
 module ActiveStorage
   # Active Storage service that keeps file bodies in PostgreSQL (table "stored_files").
   #
-  # Made for hosts without a persistent disk, such as Vercel. It suits small private files
+  # Made for hosts without a persistent disk. It suits small private files
   # (payment screenshots up to a few MB). For many or large files, switch to S3 / R2.
   #
   #   # config/storage.yml

@@ -1,5 +1,5 @@
 #!/bin/bash -e
-# Runs before the server starts (every cold start on Vercel).
+# Runs before the server starts (every pod start).
 # - Migrates the database, and on an empty database loads the schema and runs the seeds.
 #   db:prepare_locked holds an advisory lock, so containers that start together take turns.
 #   Uses the direct (unpooled) connection when the provider offers one, because advisory

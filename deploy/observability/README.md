@@ -142,7 +142,7 @@ All Grafana-managed (`grafana-alerting/rules.yaml`), sent to Telegram.
   visible firms are read from the database by every web pod. With two replicas, `sum()` doubles them.
 - **Gauges cost queries.** Each export (30s) runs four `COUNT`s from the web pod, borrowing a pool
   connection for a few milliseconds.
-- **Telemetry is off without `OTEL_EXPORTER_OTLP_ENDPOINT`** (development, test, Vercel).
+- **Telemetry is off without `OTEL_EXPORTER_OTLP_ENDPOINT`** (development, test).
 - **Monitoring shares the node.** If the node dies, Grafana dies with it. The uptime probe and
   healthchecks.io are the alerts that still work.
 - **Logs start at the end.** A collector restart skips log lines rather than replaying them.

@@ -8,7 +8,7 @@ Rails.application.routes.draw do
   # Files of the "database" Active Storage service (signed URLs that expire).
   get "files/:encoded_key/*filename", to: "stored_files#show", as: :stored_file, format: false
 
-  # Vercel Cron jobs (protected by CRON_SECRET).
+  # Called by the k8s CronJob (protected by CRON_SECRET).
   get "internal/cron/subscription_reminders", to: "internal/cron#subscription_reminders"
 
   # Public account-deletion page (the URL declared in Google Play's Data safety form).

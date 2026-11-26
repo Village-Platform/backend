@@ -1,4 +1,4 @@
-# db:prepare for containers that start at the same time (Vercel can boot several at once).
+# db:prepare for containers that start at the same time (several pods can boot at once).
 #
 # On an empty database, db:prepare loads db/schema.rb. That step is not protected by
 # the migration lock, so two containers loading the schema together fail with
