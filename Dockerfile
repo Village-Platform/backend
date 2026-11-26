@@ -4,7 +4,7 @@
 #   docker build -t village-platform .
 #   docker run --rm -p 3000:3000 --env-file .env.production village-platform
 
-ARG RUBY_VERSION=4.0.9
+ARG RUBY_VERSION=4.0.10
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 WORKDIR /rails
