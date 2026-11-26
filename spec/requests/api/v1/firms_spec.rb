@@ -54,6 +54,31 @@ RSpec.describe "Firms API", type: :request do
       expect(json["data"].map { _1["name"] }).to eq([ "Pharmacy Nour" ])
     end
 
+    it "keeps the name order unless sort=random is asked for" do
+      %w[Charlie Alpha Bravo].each { create(:firm, name: _1, category:) }
+
+      get "/api/v1/firms"
+
+      expect(json["data"].map { _1["name"] }).to eq(%w[Alpha Bravo Charlie])
+    end
+
+    it "returns a random sample of visible firms with sort=random" do
+      names = (1..10).map { "Firm #{_1}" }
+      names.each { create(:firm, name: _1, category:) }
+      create(:firm, :pending, name: "Pending", category:)
+
+      samples = Array.new(20) do
+        get "/api/v1/firms", params: { sort: "random", per_page: 3 }
+        expect(json["meta"]["total"]).to eq(10)
+        json["data"].map { _1["name"] }
+      end
+
+      expect(samples).to all(have_attributes(size: 3))
+      expect(samples.flatten).to all(be_in(names))
+      # 20 draws of 3 out of 10 landing on one same ordered trio: about 1 in 720^19.
+      expect(samples.uniq.size).to be > 1
+    end
+
     it "hides pending firms from other users on show" do
       firm = create(:firm, :pending, category:)
       get "/api/v1/firms/#{firm.id}", headers: auth_headers(create(:user))

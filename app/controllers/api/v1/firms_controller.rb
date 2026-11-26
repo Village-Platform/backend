@@ -17,7 +17,7 @@ module Api
         elsif params[:review] == "pending" && current_user&.reviewer?
           scope.pending
         else
-          scope.visible
+          scope.visible.reorder(Arel.sql("RANDOM()"))
         end
         scope = scope.where(category_id: params[:category_id]) if params[:category_id].present?
         scope = scope.search(params[:q]) if params[:q].present?
