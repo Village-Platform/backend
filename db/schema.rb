@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_01_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_25_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -57,9 +57,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_120000) do
     t.text "rejection_reason"
     t.bigint "reviewed_by_id"
     t.datetime "reviewed_at"
+    t.string "source_url"
+    t.string "external_id"
     t.index "lower((title)::text) gin_trgm_ops", name: "index_articles_on_title_trigram", using: :gin
     t.index ["author_id"], name: "index_articles_on_author_id"
     t.index ["created_at"], name: "index_articles_pending_review", where: "(review_status = 0)"
+    t.index ["external_id"], name: "index_articles_on_external_id", unique: true, where: "(external_id IS NOT NULL)"
     t.index ["kind", "published_at"], name: "index_articles_on_kind_and_published_at"
     t.index ["notify_topic_id"], name: "index_articles_on_notify_topic_id"
     t.index ["published_at"], name: "index_articles_on_published_at"
@@ -177,6 +180,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_120000) do
     t.index ["user_id", "created_at"], name: "index_notifications_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_notifications_unread_by_user", where: "(read_at IS NULL)"
     t.check_constraint "num_nonnulls(user_id, device_id) = 1", name: "notifications_one_recipient"
+  end
+
+  create_table "recovery_codes", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "code_digest", null: false
+    t.datetime "used_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code_digest"], name: "index_recovery_codes_on_code_digest", unique: true
+    t.index ["user_id"], name: "index_recovery_codes_on_user_id"
   end
 
   create_table "solid_queue_batch_executions", force: :cascade do |t|
@@ -404,6 +417,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_120000) do
     t.index ["key"], name: "index_topics_on_key", unique: true
   end
 
+  create_table "totp_credentials", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.text "otp_secret", null: false
+    t.datetime "confirmed_at"
+    t.bigint "last_used_timestep"
+    t.integer "failed_attempts", default: 0, null: false
+    t.datetime "locked_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_totp_credentials_on_user_id", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name", null: false
     t.string "phone", null: false
@@ -413,6 +438,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
+    t.integer "token_version", default: 0, null: false
     t.index "lower((email)::text) gin_trgm_ops", name: "index_users_on_email_trigram", using: :gin
     t.index "lower((name)::text) gin_trgm_ops", name: "index_users_on_name_trigram", using: :gin
     t.index "lower((phone)::text) gin_trgm_ops", name: "index_users_on_phone_trigram", using: :gin
@@ -437,6 +463,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_120000) do
   add_foreign_key "notifications", "devices", on_delete: :cascade
   add_foreign_key "notifications", "notification_campaigns", column: "campaign_id"
   add_foreign_key "notifications", "users"
+  add_foreign_key "recovery_codes", "users", on_delete: :cascade
   add_foreign_key "solid_queue_batch_executions", "solid_queue_batches", column: "batch_id", on_delete: :cascade
   add_foreign_key "solid_queue_batch_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
@@ -451,4 +478,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_01_120000) do
   add_foreign_key "topic_subscriptions", "devices", on_delete: :cascade
   add_foreign_key "topic_subscriptions", "topics"
   add_foreign_key "topic_subscriptions", "users"
+  add_foreign_key "totp_credentials", "users", on_delete: :cascade
 end

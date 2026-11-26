@@ -9,8 +9,17 @@ build: ## Start PostgreSQL, install gems, prepare the database
 	docker compose up -d db
 	bin/setup --skip-server
 
-up: db ## Run the Rails server
-	bin/rails s
+dev-console:
+	bin/rails console
+
+up:
+	bin/rails s -p 5000
+
+restart:
+	bin/rails restart
+
+db: ## Start PostgreSQL (host port 5434)
+	docker compose up -d db
 
 css: ## Rebuild the admin CSS on change
 	bin/rails tailwindcss:watch

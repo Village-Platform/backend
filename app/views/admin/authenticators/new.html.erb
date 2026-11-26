@@ -1,0 +1,37 @@
+<% content_for(:title, t("admin.authenticators.title")) %>
+<div class="auth">
+  <section class="auth-panel">
+    <div class="auth-card auth-card-wide">
+      <div class="logo"><%= brand_logo %></div>
+      <h1><%= t("admin.authenticators.title") %></h1>
+      <p class="subtitle"><%= t("admin.authenticators.subtitle") %></p>
+
+      <%= render "admin/shared/auth_flash" %>
+
+      <ol class="setup-steps">
+        <li><%= t("admin.authenticators.step_install") %></li>
+        <li><%= t("admin.authenticators.step_scan") %></li>
+        <li><%= t("admin.authenticators.step_code") %></li>
+      </ol>
+
+      <div class="qr-box"><%= authenticator_qr(@credential.provisioning_uri) %></div>
+
+      <details class="manual-secret">
+        <summary><%= t("admin.authenticators.manual") %></summary>
+        <code class="secret-key ltr"><%= grouped_secret(@credential.otp_secret) %></code>
+        <p class="hint"><%= t("admin.authenticators.manual_hint") %></p>
+      </details>
+
+      <%= form_with url: admin_authenticator_path, method: :post do |f| %>
+        <div class="field">
+          <%= f.label :otp, t("admin.authenticators.code") %>
+          <%= f.text_field :otp, required: true, autocomplete: "one-time-code", inputmode: "numeric",
+                pattern: "[0-9]{6}", maxlength: 6, dir: "ltr", class: "otp-input" %>
+        </div>
+        <%= f.button t("admin.authenticators.submit"), type: "submit", class: "btn" %>
+      <% end %>
+    </div>
+  </section>
+
+  <%= render "admin/shared/auth_visual" %>
+</div>

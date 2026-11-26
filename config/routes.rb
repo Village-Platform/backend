@@ -20,6 +20,9 @@ Rails.application.routes.draw do
     get    "login",  to: "sessions#new",     as: :login
     post   "login",  to: "sessions#create"
     delete "logout", to: "sessions#destroy", as: :logout
+    # Two-factor sign-in: the code step after the password, and setting up the authenticator app.
+    resource :second_factor, only: %i[ new create ]
+    resource :authenticator, only: %i[ new create ]
 
     root "dashboard#show"
 
