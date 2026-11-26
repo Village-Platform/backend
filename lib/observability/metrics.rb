@@ -42,7 +42,10 @@ module Observability
         description: "Login attempts", attributes: %i[ surface result ],
         zero: [ { surface: "api", result: "success" }, { surface: "api", result: "invalid_credentials" },
                 { surface: "admin", result: "success" }, { surface: "admin", result: "invalid_credentials" },
-                { surface: "admin", result: "rate_limited" } ]
+                { surface: "admin", result: "rate_limited" }, { surface: "admin", result: "mfa_required" },
+                { surface: "admin", result: "mfa_success" }, { surface: "admin", result: "mfa_invalid" },
+                { surface: "admin", result: "mfa_replayed" }, { surface: "admin", result: "mfa_locked" },
+                { surface: "admin", result: "recovery_code_used" }, { surface: "admin", result: "mfa_enrolled" } ]
       ),
       tokenless_api_requests: Definition.new(
         kind: :counter, name: "aghour.auth.tokenless_requests", unit: "{request}",

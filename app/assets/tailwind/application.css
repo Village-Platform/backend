@@ -728,6 +728,40 @@
   .auth-card .btn {
     @apply w-full py-3 text-sm mt-2;
   }
+  .auth-card-wide {
+    @apply max-w-md;
+  }
+  .setup-steps {
+    @apply list-decimal ps-5 text-xs text-muted space-y-1 mb-4;
+  }
+  /* A QR code needs dark modules on a light ground in every theme, so this box stays white. */
+  .qr-box {
+    @apply mx-auto w-52 p-3 rounded-xl bg-white mb-3;
+  }
+  .qr-box svg {
+    @apply block w-full h-auto;
+  }
+  .manual-secret {
+    @apply text-xs text-muted mb-4;
+  }
+  .manual-secret summary {
+    @apply cursor-pointer;
+  }
+  .secret-key {
+    @apply block mt-2 p-2 rounded-lg bg-surface2 text-ink font-mono text-sm tracking-wider text-center;
+  }
+  .otp-input {
+    @apply font-mono text-center tracking-widest;
+  }
+  .recovery-codes {
+    @apply grid grid-cols-2 gap-2 my-4 font-mono text-sm;
+  }
+  .recovery-actions {
+    @apply flex gap-2 justify-center mb-4;
+  }
+  .recovery-codes li {
+    @apply p-2 rounded-lg bg-surface2 text-ink text-center;
+  }
   .auth-foot {
     @apply text-center text-muted text-[10px] mt-7;
   }

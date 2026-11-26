@@ -26,7 +26,7 @@ Rails.application.configure do
   config.solid_queue.preserve_finished_jobs = false
 
   # Uploaded files (payment screenshots). "database" keeps them in PostgreSQL, which works on
-  # hosts without a persistent disk (Vercel). Use "local" with a mounted volume, or S3 later.
+  # hosts without a persistent disk. Use "local" with a mounted volume, or S3 later.
   config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", "database").to_sym
 
   config.active_record.dump_schema_after_migration = false

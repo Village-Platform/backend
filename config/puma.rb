@@ -10,5 +10,5 @@ plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
 
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
 
-# Exit cleanly (code 0) on SIGTERM, e.g. when Vercel scales the container down.
+# Exit cleanly (code 0) on SIGTERM, e.g. when Kubernetes stops the pod.
 raise_exception_on_sigterm false

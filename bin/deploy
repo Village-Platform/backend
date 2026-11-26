@@ -69,7 +69,7 @@ deploy() {
     step "Building village-platform:$sha on the server"
     git archive --format=tar.gz HEAD | remote "rm -rf $APP_DIR && mkdir -p $APP_DIR \
       && tar -xzf - -C $APP_DIR && cd $APP_DIR \
-      && docker build -f Dockerfile.vercel --build-arg APP_REVISION=$sha -t village-platform:$sha . \
+      && docker build -f Dockerfile --build-arg APP_REVISION=$sha -t village-platform:$sha . \
       && docker save village-platform:$sha | k3s ctr images import -"
   fi
 

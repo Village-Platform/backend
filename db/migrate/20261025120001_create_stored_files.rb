@@ -1,5 +1,5 @@
 # File bodies for the "database" Active Storage service (lib/active_storage/service/database_service.rb).
-# Used on hosts without a persistent disk (Vercel). The blob metadata stays in active_storage_blobs.
+# Used on hosts without a persistent disk. The blob metadata stays in active_storage_blobs.
 class CreateStoredFiles < ActiveRecord::Migration[8.1]
   def change
     create_table :stored_files do |t|

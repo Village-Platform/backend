@@ -18,6 +18,7 @@ ar:
       file_too_large: "يجب أن يكون حجمها أقل من %{size}"
       too_many_pending: "لديك عدد كبير من الطلبات قيد المراجعة. انتظر حتى تتم مراجعتها."
       already_reviewed: "تمت مراجعة هذا العنصر بالفعل."
+      phone_taken: "رقم الهاتف مستخدم في حساب آخر. إذا كان هذا رقمك، تواصل مع الإدارة."
   account_deletions:
     invalid: "رقم الهاتف أو كلمة المرور غير صحيحة."
     super_admin: "لا يمكن حذف حساب مدير النظام من هنا. تواصل مع مدير آخر."
@@ -60,6 +61,12 @@ ar:
     instapay: "إنستاباي"
     vodafone_cash: "فودافون كاش"
   activerecord:
+    errors:
+      models:
+        user:
+          attributes:
+            phone:
+              egyptian_mobile: "يجب أن يتكون من ١١ رقمًا ويبدأ بـ 010 أو 011 أو 012 أو 015"
     models:
       user: "مستخدم"
       category: "قسم"

@@ -7,9 +7,27 @@ module Api
         render_record(current_user, UserSerializer)
       end
 
+      # A new password revokes every token of this user, including the one on this request, so the
+      # response carries a replacement in meta.token. Clients that ignore it are signed out on their
+      # next call (a 401), which is safe, only abrupt.
       def update
-        current_user.update!(me_params)
+        attrs = me_params
+        
+        return render_record(current_user, UserSerializer) unless current_user.saved_change_to_token_version?
+
+        render json: { data: UserSerializer.render(current_user), meta: { token: issue_token_for(current_user) } }
+        
+        if phone_change?(attrs) && !current_user.authenticate(params[:user][:current_password].to_s)
+          return render_error(:unprocessable_content, "invalid_password")
+        end
+
+        current_user.assign_attributes(attrs)
+        current_user.save!(context: :profile_update)
         render_record(current_user, UserSerializer)
+      rescue ActiveRecord::RecordInvalid => e
+        raise unless e.record.errors.of_kind?(:phone, :taken)
+
+        render_error(:unprocessable_content, "phone_taken", details: e.record.errors.to_hash(true))
       end
 
       # DELETE /api/v1/me  { "password": "..." }
@@ -26,7 +44,11 @@ module Api
       private
 
       def me_params
-        params.require(:user).permit(:name, :email, :password, :password_confirmation)
+        params.require(:user).permit(:name, :email, :phone, :password, :password_confirmation)
+      end
+
+      def phone_change?(attrs)
+        attrs.key?(:phone) && User.normalize_value_for(:phone, attrs[:phone]) != current_user.phone
       end
     end
   end

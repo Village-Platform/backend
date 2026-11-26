@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
-# Production image for Vercel (Container Runtime). Vercel detects this file, builds it on deploy
-# and sends all traffic to the container. Build locally with:
-#   docker build -f Dockerfile.vercel -t village-platform .
+# Production image, deployed to the k3s cluster by bin/deploy (see deploy/k8s/README.md).
+# Build locally with:
+#   docker build -t village-platform .
 #   docker run --rm -p 3000:3000 --env-file .env.production village-platform
 
-ARG RUBY_VERSION=4.0.9
+ARG RUBY_VERSION=4.0.10
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 WORKDIR /rails
@@ -54,7 +54,7 @@ ENV BOOTSNAP_READONLY="1" \
     HOME="/home/rails"
 
 # The commit this image was built from, reported as service.version on traces and metrics.
-# Last, so a new revision does not invalidate the layers above. Vercel does not pass it: "unknown".
+# Last, so a new revision does not invalidate the layers above. bin/deploy passes the short SHA; otherwise "unknown".
 ARG APP_REVISION=unknown
 ENV APP_REVISION=$APP_REVISION
 

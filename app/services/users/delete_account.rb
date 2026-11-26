@@ -25,6 +25,8 @@ module Users
         @user.notifications.delete_all
         @user.devices.each { |device| Devices::Detach.call(device:) }
         @user.topic_subscriptions.delete_all
+        TotpCredential.where(user: @user).delete_all
+        RecoveryCode.where(user: @user).delete_all
         @user.subscriptions.find_each do |subscription|
           subscription.payment_screenshot.purge if subscription.payment_screenshot.attached?
           subscription.update_columns(payer_phone: nil, notes: nil)
@@ -35,6 +37,9 @@ module Users
           phone: tombstone_phone,
           email: nil,
           password_digest: BCrypt::Password.create(SecureRandom.base58(32)),
+          # update_columns skips the model's revocation callbacks, so revoke here: a restored
+          # tombstone must not revive the old tokens.
+          token_version: @user.token_version + 1,
           role: User.roles[:user],
           deleted_at: Time.current,
           updated_at: Time.current

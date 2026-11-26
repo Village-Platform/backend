@@ -44,11 +44,13 @@ module Authentication
     payload = token_payload
     return nil if payload.nil? || payload.key?("typ")
 
-    User.not_deleted.find_by(id: payload["sub"])
+    user = User.not_deleted.find_by(id: payload["sub"])
+    user if user&.token_version_current?(payload["ver"])
   end
 
+  # "ver" is the user's token_version: bumping it (new password, deleted account) revokes the token.
   def issue_token_for(user)
-    JsonWebToken.encode({ sub: user.id })
+    JsonWebToken.encode({ sub: user.id, ver: user.token_version })
   end
 
   def issue_guest_token

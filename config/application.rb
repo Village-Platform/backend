@@ -41,7 +41,20 @@ module AghourServices
     # app versions without guest tokens keep working; flip it once tokenless traffic has died down.
     config.x.api_token_required = ENV["API_TOKEN_REQUIRED"] == "1"
 
-    # Image variants (thumbnails) with libvips (installed in Dockerfile.vercel).
+    # Authenticator-app (TOTP) code at dashboard sign-in for reviewers (ReviewerMfa):
+    #   off      - password only (default)
+    #   optional - reviewers who enrolled must enter a code; others may enroll from the dashboard
+    #   required - every reviewer must enter a code; one without a device enrolls right after the password
+    config.x.reviewer_mfa_mode = ENV.fetch("REVIEWER_MFA_MODE", "off")
+
+    # Active Record Encryption keeps TOTP secrets encrypted at rest. Production reads the keys from the
+    # environment (`bin/rails db:encryption:init` prints a set); development and test set public
+    # throwaway keys in their environment files.
+    config.active_record.encryption.primary_key = ENV["ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY"]
+    config.active_record.encryption.deterministic_key = ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"]
+    config.active_record.encryption.key_derivation_salt = ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"]
+
+    # Image variants (thumbnails) with libvips (installed in the Dockerfile).
     config.active_storage.variant_processor = :vips
 
     config.generators do |g|

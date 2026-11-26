@@ -20,8 +20,8 @@ test:
   <<: *default
   database: aghour_services_test
 
-# In production set DATABASE_URL, e.g. postgres://user:pass@host/aghour_services_production
-# (on Vercel the Neon integration sets it). The URL may point to a transaction pooler,
+# In production set DATABASE_URL, e.g. postgres://user:pass@host/aghour_services_production.
+# The URL may point to a transaction pooler,
 # so prepared statements are off. Migrations use DATABASE_URL_UNPOOLED (bin/docker-entrypoint).
 production:
   <<: *default

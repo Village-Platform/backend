@@ -20,4 +20,9 @@ Rails.application.configure do
   config.active_job.queue_adapter = :solid_queue
 
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Throwaway Active Record Encryption keys (public, never used in production).
+  config.active_record.encryption.primary_key = "village-development-primary-key-not-secret"
+  config.active_record.encryption.deterministic_key = "village-development-deterministic-key-not-secret"
+  config.active_record.encryption.key_derivation_salt = "village-development-key-derivation-salt-not-secret"
 end

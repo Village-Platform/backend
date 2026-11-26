@@ -27,19 +27,46 @@ class User < ApplicationRecord
   has_many :notifications, dependent: :delete_all
   has_many :devices, dependent: :nullify
   has_many :topic_subscriptions, dependent: :delete_all
+  # Reviewer two-factor sign-in. Kept on soft delete: a restored reviewer keeps their device.
+  has_one  :totp_credential, dependent: nil
+  has_many :recovery_codes, dependent: nil
 
   normalizes :phone, with: ->(phone) { phone.to_s.gsub(/[^\d+]/, "") }
   normalizes :email, with: ->(email) { email.strip.downcase.presence }
 
   validates :name, presence: true, length: { maximum: 100 }
   validates :phone, presence: true, uniqueness: true, format: { with: /\A\+?\d{8,15}\z/ }
+
+  EGYPTIAN_MOBILE = /\A01[0125]\d{8}\z/
+  validates :phone, format: { with: EGYPTIAN_MOBILE, message: :egyptian_mobile },
+                    on: :profile_update, if: :will_save_change_to_phone?
   validates :email, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true
+  validates :email, format: { with: /@[^@\s]+\.[^@\s.]+\z/ }, allow_nil: true,
+                    if: -> { will_save_change_to_email? && !errors.of_kind?(:email, :invalid) }
   validates :password, length: { minimum: 8, maximum: 72 }, allow_nil: true
 
   scope :not_deleted, -> { where(deleted_at: nil) }
 
+  # Bearer tokens and dashboard sessions record token_version when issued; bumping it revokes them
+  # all. A new password bumps it in the same UPDATE, on every path that can set one (API, dashboard,
+  # console). Deleting bumps it too, so restoring the user does not revive old tokens. A role change
+  # does not: roles are read from this row on every request.
+  before_save :revoke_tokens, if: -> { persisted? && will_save_change_to_password_digest? }
+  after_destroy { User.unscoped.where(id:).update_counters(token_version: 1) }
+
   def deleted?
     deleted_at.present?
+  end
+
+  # Whether the user has finished setting up an authenticator app.
+  def totp_enabled?
+    totp_credential&.confirmed? || false
+  end
+
+  # Whether a token or session issued at `version` is still valid. A missing version means it was
+  # issued before versions existed, which only version 0 still accepts.
+  def token_version_current?(version)
+    (version.nil? ? 0 : version) == token_version
   end
 
   def can_manage_firms?
@@ -71,5 +98,11 @@ class User < ApplicationRecord
 
   def self.ransackable_scopes(auth_object = nil)
     %w[ not_deleted ]
+  end
+
+  private
+
+  def revoke_tokens
+    self.token_version += 1
   end
 end

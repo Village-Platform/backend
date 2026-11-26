@@ -1,0 +1,39 @@
+<% content_for(:title, t("admin.authenticators.done_title")) %>
+<div class="auth">
+  <section class="auth-panel">
+    <div class="auth-card auth-card-wide">
+      <div class="logo"><%= brand_logo %></div>
+      <h1><%= t("admin.authenticators.done_title") %></h1>
+      <p class="subtitle"><%= t("admin.authenticators.done_subtitle") %></p>
+
+      <%= tag.div data: {
+            recovery_codes: true,
+            filename: "aghour-recovery-codes-#{Date.current.iso8601}.txt",
+            header: t("admin.authenticators.file_header", name: @reviewer.name, date: l(Date.current))
+          } do %>
+        <ol class="recovery-codes ltr">
+          <% @recovery_codes.each do |code| %>
+            <li><code data-code="<%= code %>"><%= code %></code></li>
+          <% end %>
+        </ol>
+
+        <div class="recovery-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-recovery-download hidden>
+            <%= t("admin.authenticators.download") %>
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" data-recovery-copy hidden
+                  data-done="<%= t("admin.authenticators.copied") %>">
+            <%= t("admin.authenticators.copy") %>
+          </button>
+        </div>
+      <% end %>
+
+      <div class="flash flash-alert"><%= t("admin.authenticators.done_warning") %></div>
+
+      <%= link_to t("admin.authenticators.continue"), admin_root_path, class: "btn" %>
+    </div>
+  </section>
+
+  <%= render "admin/shared/auth_visual" %>
+</div>
+<%= javascript_include_tag "recovery_codes", defer: true %>

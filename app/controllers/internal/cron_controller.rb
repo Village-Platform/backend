@@ -1,5 +1,5 @@
-# Endpoints called by Vercel Cron (see vercel.json).
-# Vercel sends "Authorization: Bearer <CRON_SECRET>"; anything else gets 401.
+# Endpoints called by the k8s CronJob (see deploy/k8s/cron.yaml).
+# It sends "Authorization: Bearer <CRON_SECRET>"; anything else gets 401.
 module Internal
   class CronController < ActionController::API
     before_action :authenticate_cron!

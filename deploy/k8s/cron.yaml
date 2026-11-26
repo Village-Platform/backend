@@ -1,4 +1,4 @@
-# Same contract as Vercel Cron: GET the endpoint with the CRON_SECRET bearer token.
+# GET the endpoint with the CRON_SECRET bearer token.
 # The job is idempotent (Notifier dedupe_key), so a retried or doubled run sends nothing new.
 # On success it pings HEALTHCHECK_URL (healthchecks.io), if set: a dead man's switch that still
 # alerts when the whole node, and the monitoring on it, is gone.

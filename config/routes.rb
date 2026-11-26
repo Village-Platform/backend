@@ -12,7 +12,7 @@ Rails.application.routes.draw do
   # Files of the "database" Active Storage service (signed URLs that expire).
   get "files/:encoded_key/*filename", to: "stored_files#show", as: :stored_file, format: false
 
-  # Vercel Cron jobs (protected by CRON_SECRET).
+  # Called by the k8s CronJob (protected by CRON_SECRET).
   get "internal/cron/subscription_reminders", to: "internal/cron#subscription_reminders"
 
   # Public account-deletion page (the URL declared in Google Play's Data safety form).
@@ -24,6 +24,9 @@ Rails.application.routes.draw do
     get    "login",  to: "sessions#new",     as: :login
     post   "login",  to: "sessions#create"
     delete "logout", to: "sessions#destroy", as: :logout
+    # Two-factor sign-in: the code step after the password, and setting up the authenticator app.
+    resource :second_factor, only: %i[ new create ]
+    resource :authenticator, only: %i[ new create ]
 
     root "dashboard#show"
 
