@@ -20,7 +20,7 @@
 /app/assets/builds/*
 !/app/assets/builds/.keep
 
-# Precompiled assets. The Vercel image runs assets:precompile during its build;
+# Precompiled assets. The production image runs assets:precompile during its build;
 # committing host output here shadows the load path and hides newly added assets.
 /public/assets
 

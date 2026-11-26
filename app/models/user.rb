@@ -36,7 +36,13 @@ class User < ApplicationRecord
 
   validates :name, presence: true, length: { maximum: 100 }
   validates :phone, presence: true, uniqueness: true, format: { with: /\A\+?\d{8,15}\z/ }
+
+  EGYPTIAN_MOBILE = /\A01[0125]\d{8}\z/
+  validates :phone, format: { with: EGYPTIAN_MOBILE, message: :egyptian_mobile },
+                    on: :profile_update, if: :will_save_change_to_phone?
   validates :email, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true
+  validates :email, format: { with: /@[^@\s]+\.[^@\s.]+\z/ }, allow_nil: true,
+                    if: -> { will_save_change_to_email? && !errors.of_kind?(:email, :invalid) }
   validates :password, length: { minimum: 8, maximum: 72 }, allow_nil: true
 
   scope :not_deleted, -> { where(deleted_at: nil) }

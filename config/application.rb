@@ -54,7 +54,7 @@ module AghourServices
     config.active_record.encryption.deterministic_key = ENV["ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY"]
     config.active_record.encryption.key_derivation_salt = ENV["ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT"]
 
-    # Image variants (thumbnails) with libvips (installed in Dockerfile.vercel).
+    # Image variants (thumbnails) with libvips (installed in the Dockerfile).
     config.active_storage.variant_processor = :vips
 
     config.generators do |g|

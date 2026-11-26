@@ -209,7 +209,7 @@ These are easy to break from a single file and are covered by request specs:
 
 `lib/active_storage/service/database_service.rb` is a custom Active Storage service that keeps file
 bodies in PostgreSQL (`stored_files`), served by `StoredFilesController` through signed expiring
-URLs. It exists because Vercel has no persistent disk. Development uses `:local`, test uses `:test`,
+URLs. It exists because the app was first hosted without a persistent disk. Development uses `:local`, test uses `:test`,
 production defaults to `database` (override with `ACTIVE_STORAGE_SERVICE`). Switch to S3/R2 before
 files get large or numerous.
 
@@ -280,8 +280,8 @@ and range-based scopes (`where(starts_at: ..Time.current)`).
 
 ## Deployment
 
-Production runs on a single-node k3s cluster (`deploy/k8s/`, `deploy/observability/`); the Vercel
-setup below (`Dockerfile.vercel`, `vercel.json`) is still in the repo.
+Production runs on a single-node k3s cluster (`deploy/k8s/`, `deploy/observability/`), built from
+`Dockerfile` and rolled out with `bin/deploy`.
 
 - Background jobs: **Solid Queue**, tables in the primary database, run inside Puma when
   `SOLID_QUEUE_IN_PUMA=1` (set in `deploy/k8s/config.yaml` and `.env.example`; otherwise run
@@ -289,16 +289,13 @@ setup below (`Dockerfile.vercel`, `vercel.json`) is still in the repo.
   before campaigns compete with web requests — and watch memory: the plugin forks extra Ruby
   processes on a 2 GB node.
 - The daily reminders: a k8s `CronJob` curls `GET /internal/cron/subscription_reminders` with
-  `CRON_SECRET` (Vercel Cron did the same).
+  `CRON_SECRET`, compared with `secure_compare` (`Internal::CronController`).
 
-## Deployment constraints (Vercel Container Runtime)
+## Deployment constraints
 
-- Request bodies cap at 4.5MB — that is why the screenshot limit is 4MB.
+- Payment screenshots cap at 4MB, a leftover of Vercel's 4.5MB request-body limit. Clients may rely
+  on it, so treat raising it as an API change (and check the ingress body-size limit).
 - `bin/docker-entrypoint` runs `db:prepare_locked` on boot; the custom rake task takes a PostgreSQL
-  advisory lock because several containers can cold-start at once and plain `db:prepare` races on
-  schema load.
-- The daily job runs via Vercel Cron hitting `GET /internal/cron/subscription_reminders`, guarded by
-  a `CRON_SECRET` bearer token compared with `secure_compare` (`Internal::CronController`).
-  On Vercel, Solid Queue would need `SOLID_QUEUE_IN_PUMA` and a container that is not scaled to zero.
-- `ruby-vips` is in the `:production` group only (libvips is installed in `Dockerfile.vercel`), so
+  advisory lock because several pods can start at once and plain `db:prepare` races on schema load.
+- `ruby-vips` is in the `:production` group only (libvips is installed in the `Dockerfile`), so
   image variants can't be exercised locally without installing it.

@@ -19,7 +19,7 @@ class Subscription < ApplicationRecord
   end
 
   SCREENSHOT_CONTENT_TYPES = %w[image/png image/jpeg image/webp].freeze
-  SCREENSHOT_MAX_SIZE = 4.megabytes # Vercel accepts request bodies up to 4.5MB
+  SCREENSHOT_MAX_SIZE = 4.megabytes # Kept from the old 4.5MB request cap; clients may rely on it
 
   enum :status, { pending: 0, active: 1, rejected: 2 }, default: :pending, validate: true
   enum :payment_method, { instapay: 0, vodafone_cash: 1 }, validate: true

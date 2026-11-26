@@ -165,7 +165,7 @@ Safety: one pending request per user, and a transfer reference can't be reused (
 ### Payment screenshot
 
 Optional on `POST /subscriptions` as `subscription[payment_screenshot]` (multipart/form-data):
-PNG, JPEG or WEBP, max 4MB (Vercel accepts request bodies up to 4.5MB). Files are stored with Active Storage:
+PNG, JPEG or WEBP, max 4MB. Files are stored with Active Storage:
 `storage/` locally, and in PostgreSQL in production (the `database` service, see Deploy).
 The screenshot is never public: `GET .../payment_screenshot` checks access, then redirects
 to a URL that expires after 5 minutes.
@@ -178,51 +178,33 @@ and every reminder has a dedupe key, so running the job twice sends nothing new.
 
 ```bash
 bin/rails notifications:subscription_reminders
-# On Vercel this runs daily through Vercel Cron (vercel.json). Elsewhere, crontab example (09:00 Cairo):
+# In production a k8s CronJob calls GET /internal/cron/subscription_reminders daily (deploy/k8s/cron.yaml).
+# Elsewhere, crontab example (09:00 Cairo):
 # 0 9 * * * cd /path/to/aghour_services && RAILS_ENV=production bin/rails notifications:subscription_reminders
 ```
 
-## Deploy (Vercel)
+## Deploy
 
-The app runs on Vercel's Container Runtime (beta, all plans): Vercel finds `Dockerfile.vercel`,
-builds the image on every deploy and sends all traffic to it.
+Production runs on a single-node k3s cluster. Manifests, secrets and the full procedure are in
+[`deploy/k8s/README.md`](deploy/k8s/README.md); monitoring is in `deploy/observability/`.
 
-| Piece | How it works on Vercel |
-|-------|------------------------|
-| App | `Dockerfile.vercel` (Ruby 4.0.1, Puma on `PORT`=3000, non-root) |
-| Database | Neon PostgreSQL from the Vercel Marketplace (sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED`) |
-| Migrations / seeds | `bin/docker-entrypoint` runs `db:prepare_locked` on start: migrates, and seeds an empty database. An advisory lock makes containers that start together take turns |
+```bash
+bin/deploy            # build the image on the server from HEAD and roll it out
+bin/deploy rollback <sha>
+```
+
+| Piece | How it works |
+|-------|--------------|
+| App | `Dockerfile` (Ruby 4.0.1, Puma on `PORT`=3000, non-root) |
+| Migrations / seeds | `bin/docker-entrypoint` runs `db:prepare_locked` on start: migrates, and seeds an empty database. An advisory lock makes pods that start together take turns |
 | Files | `database` Active Storage service: screenshots are kept in PostgreSQL (`stored_files`), served by signed 5-minute URLs |
-| Daily reminders | Vercel Cron calls `GET /internal/cron/subscription_reminders` at 07:00 UTC (`vercel.json`), protected by `CRON_SECRET` |
-| Background jobs | `:async` inside the container (fine for the current small jobs) |
-
-Steps:
-
-1. Push to GitHub, then import the repo in Vercel (or create the project with the CLI: `vercel link`, `vercel deploy`).
-2. In the project: Storage → Create → Neon (Postgres). Connect it to Production and Preview.
-3. Environment variables (Project → Settings → Environment Variables):
-
-   | Name | Value |
-   |------|-------|
-   | `PORT` | `3000` (Vercel's default is 80) |
-   | `SECRET_KEY_BASE` | `bin/rails secret` (sensitive) |
-   | `CRON_SECRET` | a long random string (sensitive) |
-   | `SUPER_ADMIN_PHONE` / `SUPER_ADMIN_PASSWORD` | the first admin account (required in production) |
-   | `INSTAPAY_ADDRESS` / `VODAFONE_CASH_NUMBER` | where owners pay |
-   | `ASSUME_SSL` / `FORCE_SSL` | `1` / `1` |
-   | `SEED_DEMO` | `1` only if you want the demo data |
-   | `DB_PREPARE_ON_BOOT` | `0` to skip migrations on start (then run them yourself) |
-
-4. Deploy, then open `https://<project>.vercel.app/up` and `/admin/login`.
-5. Point the Android release build at it: `AGHOUR_API_URL_RELEASE=https://<project>.vercel.app/api/v1/`.
-
-Limits to know: request bodies up to 4.5MB, requests up to 300s (Hobby), the container sleeps
-after 5 minutes without traffic (the next request is a cold start, which also runs `db:prepare`).
+| Daily reminders | A k8s `CronJob` calls `GET /internal/cron/subscription_reminders`, protected by `CRON_SECRET` |
+| Background jobs | Solid Queue inside Puma (`SOLID_QUEUE_IN_PUMA=1`) |
 
 Run the production image locally:
 
 ```bash
-docker build -f Dockerfile.vercel -t village-platform .
+docker build -t village-platform .
 docker run --rm -p 3000:3000 -e DATABASE_URL=postgres://postgres:postgres@host.docker.internal/aghour_services_production \
   -e SECRET_KEY_BASE=$(bin/rails secret) -e SUPER_ADMIN_PASSWORD=change-me village-platform
 ```
