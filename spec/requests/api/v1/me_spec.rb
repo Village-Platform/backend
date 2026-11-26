@@ -74,19 +74,20 @@ RSpec.describe "Me API", type: :request do
       expect(user.reload.phone).to eq("01012345678")
     end
 
-    it "requires the current password to change the password" do
-      update_me(password: "new-password1", password_confirmation: "new-password1", current_password: "wrong-pass")
+    # The released Android app's change-password screen sends no current_password.
+    it "changes the password without the current one, for released app versions" do
+      update_me(password: "new-password1", password_confirmation: "new-password1")
+
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.authenticate("new-password1")).to be_truthy
+    end
+
+    it "requires the current password for a phone change sent with a new password" do
+      update_me(phone: "01198765432", password: "new-password1", password_confirmation: "new-password1")
 
       expect(response).to have_http_status(:unprocessable_content)
       expect(json.dig("error", "code")).to eq("invalid_password")
       expect(user.reload.authenticate("password123")).to be_truthy
-    end
-
-    it "changes the password with the current one" do
-      update_me(password: "new-password1", password_confirmation: "new-password1", current_password: "password123")
-
-      expect(response).to have_http_status(:ok)
-      expect(user.reload.authenticate("new-password1")).to be_truthy
     end
 
     it "needs no password for the name, the email, or resending the same phone" do
