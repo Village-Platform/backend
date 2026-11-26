@@ -20,12 +20,6 @@ module Api
         raise unless e.record.errors.of_kind?(:phone, :taken)
 
         render_error(:unprocessable_content, "phone_taken", details: e.record.errors.to_hash(true))
-      rescue ActiveRecord::RecordNotUnique => e
-        # Another account took the phone between the uniqueness check and the insert.
-        raise unless e.message.include?("index_users_on_phone")
-
-        current_user.errors.add(:phone, :taken)
-        render_error(:unprocessable_content, "phone_taken", details: current_user.errors.to_hash(true))
       end
 
       # DELETE /api/v1/me  { "password": "..." }
@@ -46,8 +40,7 @@ module Api
       end
 
       def credentials_change?(attrs)
-        # Not present?: has_secure_password stores any non-empty string, whitespace included.
-        attrs[:password].is_a?(String) && !attrs[:password].empty? ||
+        attrs[:password].present? ||
           (attrs.key?(:phone) && User.normalize_value_for(:phone, attrs[:phone]) != current_user.phone)
       end
     end

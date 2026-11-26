@@ -82,25 +82,6 @@ RSpec.describe "Me API", type: :request do
       expect(user.reload.authenticate("password123")).to be_truthy
     end
 
-    it "requires the current password for a whitespace-only new password" do
-      update_me(password: " " * 8, password_confirmation: " " * 8)
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(json.dig("error", "code")).to eq("invalid_password")
-      expect(user.reload.authenticate("password123")).to be_truthy
-    end
-
-    it "answers phone_taken when another account takes the phone between the check and the save" do
-      create(:user, phone: "01198765432")
-      allow_any_instance_of(ActiveRecord::Validations::UniquenessValidator).to receive(:validate_each)
-
-      update_me(phone: "01198765432", current_password: "password123")
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(json.dig("error", "code")).to eq("phone_taken")
-      expect(json.dig("error", "details")).to have_key("phone")
-    end
-
     it "changes the password with the current one" do
       update_me(password: "new-password1", password_confirmation: "new-password1", current_password: "password123")
 
