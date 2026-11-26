@@ -45,6 +45,19 @@ module Notifications
       valid? && (screen != "article" || target.published?)
     end
 
+    # Where a tap leads on a dashboard browser (web push). The service worker opens it on its own
+    # origin, so this is a path, and the screen → page mapping lives here beside the routes.
+    def admin_path
+      routes = Rails.application.routes.url_helpers
+      case screen
+      when "article" then routes.admin_article_path(id)
+      when "firm" then routes.admin_firm_path(id)
+      when "category" then routes.admin_category_path(id)
+      when "subscription" then routes.admin_subscription_path(id)
+      else routes.admin_root_path
+      end
+    end
+
     # FCM data values must be strings.
     def to_data
       screen == "none" ? { "screen" => "none" } : { "screen" => screen, "id" => id.to_s }

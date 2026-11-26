@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rails",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["SOLID_QUEUE_IN_PUMA=1", "bin/rails", "server", "-p", "3000"],
+      "port": 3000
+    }
+  ]
+}

@@ -8,7 +8,8 @@ class SyncDeviceTopicsJob < ApplicationJob
 
   def perform(device_id, topic_ids: nil)
     device = Device.find_by(id: device_id)
-    return unless device
+    # A dashboard browser never joins topics: they carry campaigns meant for the apps (Device).
+    return if device.nil? || device.web?
 
     keys = device.topic_keys
     topics = topic_ids ? Topic.where(id: topic_ids).pluck(:key) : keys

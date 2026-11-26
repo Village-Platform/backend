@@ -11,11 +11,17 @@ module Api
 
       # PUT /api/v1/devices/:installation_id  { "token", "locale", "app_version", "platform" }
       def update
+        attributes = params.permit(:locale, :app_version, :platform).to_h.symbolize_keys
+        # Browsers register through the dashboard (Admin::PushDevicesController), never here.
+        if attributes.key?(:platform) && Device::APP_PLATFORMS.exclude?(attributes[:platform])
+          return render_error(:unprocessable_content, "validation_failed")
+        end
+
         device = Devices::Register.call(
           installation_id: params[:installation_id],
           token: params.require(:token),
           user: current_user,
-          **params.permit(:locale, :app_version, :platform).to_h.symbolize_keys
+          **attributes
         )
         render_record(device, DeviceSerializer)
       end

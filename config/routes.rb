@@ -2,6 +2,10 @@ Rails.application.routes.draw do
   # Health check for load balancers and uptime monitors.
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # PWA for the admin dashboard (app/views/pwa/). Both files are scoped to /admin.
+  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
+  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+
   # Opening the bare domain goes to the admin dashboard.
   root to: redirect("/admin")
 
@@ -27,6 +31,7 @@ Rails.application.routes.draw do
     root "dashboard#show"
 
     patch "theme", to: "theme#update", as: :theme
+    resource :push_device, only: :create # this browser's web push token (admin_push.js)
     get "search", to: "search#index", as: :search
     resources :reviews, only: :index
 

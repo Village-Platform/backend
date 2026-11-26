@@ -14,6 +14,7 @@ module Devices
       @installation_id = installation_id
       @token = token
       @user = user
+      @platform = platform
       @attributes = { locale:, app_version:, platform: }.compact
     end
 
@@ -43,8 +44,12 @@ module Devices
 
     private
 
+    # Blocks the takeovers described above. An install also never changes platform: a mismatch is
+    # one surface reaching for another's row (the mobile API naming a dashboard browser's
+    # installation_id, which would let any signed-in user claim it).
     def authorize!(device)
       raise OwnershipError if @user.nil? && device.user_id.present? && device.token != @token
+      raise OwnershipError if device.persisted? && device.platform != @platform
     end
   end
 end

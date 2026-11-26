@@ -88,6 +88,7 @@
           <%= icon(:bell, size: 16) %>
           <% if pending_reviews_count.positive? %><span class="nav-count"><%= pending_reviews_count %></span><% end %>
         <% end %>
+        <%= push_toggle %>
         <%= theme_toggle %>
       </header>
 
@@ -114,5 +115,6 @@
     });
   </script>
   <%= javascript_include_tag "admin_search", defer: true %>
+  <%= javascript_include_tag "admin_push", type: "module" %>
 </body>
 </html>
