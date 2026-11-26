@@ -39,9 +39,6 @@ module Api
         params.require(:user).permit(:name, :email, :phone, :password, :password_confirmation)
       end
 
-      # Only the phone (the login) needs current_password for now. Password changes should too,
-      # but the released app's change-password screen does not send it yet: require it there once
-      # an app version that does is out.
       def phone_change?(attrs)
         attrs.key?(:phone) && User.normalize_value_for(:phone, attrs[:phone]) != current_user.phone
       end
