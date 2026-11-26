@@ -7,7 +7,7 @@ One VM (Ubuntu 24.04) running k3s, with Docker used only to build the image.
 | App | `web` Deployment (1 replica), image built on the node and imported into k3s containerd (`imagePullPolicy: Never`) |
 | Database | `postgres` StatefulSet, `postgres:16`, 5Gi `local-path` volume on the node's disk |
 | Ingress | Traefik (bundled with k3s) on the node's port 80 → `web` Service |
-| Migrations / seeds | `bin/docker-entrypoint` runs `db:prepare_locked` before Puma, as on Vercel |
+| Migrations / seeds | `bin/docker-entrypoint` runs `db:prepare_locked` before Puma |
 | Files | `database` Active Storage service (PostgreSQL), so the web pod stays stateless |
 | Background jobs | Solid Queue, in the primary database, run inside Puma (`SOLID_QUEUE_IN_PUMA=1` in `config.yaml`): push notifications and scheduled campaigns |
 | Daily reminders | `CronJob` at 09:00 Cairo, curls `/internal/cron/subscription_reminders` with `CRON_SECRET` |
@@ -43,7 +43,7 @@ the image is already on the node, and only changes `newTag` in the server's copy
 SHA=$(git rev-parse --short HEAD)
 git archive --format=tar.gz HEAD | ssh root@HOST "rm -rf /opt/village-platform && mkdir -p /opt/village-platform \
   && tar -xzf - -C /opt/village-platform && cd /opt/village-platform \
-  && docker build -f Dockerfile.vercel --build-arg APP_REVISION=$SHA -t village-platform:$SHA . \
+  && docker build -f Dockerfile --build-arg APP_REVISION=$SHA -t village-platform:$SHA . \
   && docker save village-platform:$SHA | k3s ctr images import -"
 # bump images[].newTag in kustomization.yaml to $SHA, copy deploy/k8s to the server, then:
 ssh root@HOST "kubectl apply -k /opt/village-deploy/deploy/k8s && kubectl -n village rollout status deploy/web"

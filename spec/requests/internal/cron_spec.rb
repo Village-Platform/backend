@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "Vercel cron", type: :request do
+RSpec.describe "Internal cron", type: :request do
   let(:path) { "/internal/cron/subscription_reminders" }
 
   around do |example|

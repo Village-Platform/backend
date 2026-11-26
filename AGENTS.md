@@ -9,7 +9,7 @@ This file provides guidance to Codex (claude.ai/code) when working with code in 
 
 JSON API backend (Rails 8.1, Ruby 4.0.1, PostgreSQL) for a village services app in Aghour Al Kubra,
 Egypt. A native Android app is the main client. Arabic is the default locale throughout.
-See `README.md` for the full endpoint table, role matrix and Vercel deploy steps.
+See `README.md` for the full endpoint table, role matrix and deploy steps.
 
 ## Commands
 
@@ -150,7 +150,7 @@ These are easy to break from a single file and are covered by request specs:
 
 `lib/active_storage/service/database_service.rb` is a custom Active Storage service that keeps file
 bodies in PostgreSQL (`stored_files`), served by `StoredFilesController` through signed expiring
-URLs. It exists because Vercel has no persistent disk. Development uses `:local`, test uses `:test`,
+URLs. It exists because the app was first hosted without a persistent disk. Development uses `:local`, test uses `:test`,
 production defaults to `database` (override with `ACTIVE_STORAGE_SERVICE`). Switch to S3/R2 before
 files get large or numerous.
 
@@ -208,14 +208,11 @@ in `spec/jobs/subscription_expiry_reminders_job_spec.rb` (the DST case above).
 Models lean on Rails 8 features already in use here: `enum ... validate: true`, `normalizes`,
 and range-based scopes (`where(starts_at: ..Time.current)`).
 
-## Deployment constraints (Vercel Container Runtime)
+## Deployment constraints
 
-- Request bodies cap at 4.5MB — that is why the screenshot limit is 4MB.
+- Payment screenshots cap at 4MB, a leftover of Vercel's 4.5MB request-body limit. Clients may rely
+  on it, so treat raising it as an API change (and check the ingress body-size limit).
 - `bin/docker-entrypoint` runs `db:prepare_locked` on boot; the custom rake task takes a PostgreSQL
-  advisory lock because several containers can cold-start at once and plain `db:prepare` races on
-  schema load.
-- The daily job runs via Vercel Cron hitting `GET /internal/cron/subscription_reminders`, guarded by
-  a `CRON_SECRET` bearer token compared with `secure_compare` (`Internal::CronController`).
-  Active Job uses the `:async` adapter in-process — there is no separate worker.
-- `ruby-vips` is in the `:production` group only (libvips is installed in `Dockerfile.vercel`), so
+  advisory lock because several pods can start at once and plain `db:prepare` races on schema load.
+- `ruby-vips` is in the `:production` group only (libvips is installed in the `Dockerfile`), so
   image variants can't be exercised locally without installing it.
