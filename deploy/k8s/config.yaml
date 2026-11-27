@@ -1,5 +1,5 @@
-# Non-secret settings. Secrets (SECRET_KEY_BASE, CRON_SECRET, POSTGRES_PASSWORD, SUPER_ADMIN_PASSWORD)
-# live in the "village-env" Secret.
+# Non-secret settings. Secrets (SECRET_KEY_BASE, CRON_SECRET, POSTGRES_PASSWORD, SUPER_ADMIN_PASSWORD,
+# and the Active Record encryption keys) live in the "village-env" Secret.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,6 +13,7 @@ data:
   # "1" = every /api/v1 call needs a user or guest token. Flip it once aghour.auth.tokenless_requests
   # {result="allowed"} is near zero, i.e. old app versions are gone; set it back to "0" to roll back.
   API_TOKEN_REQUIRED: "1"
+  REVIEWER_MFA_MODE: "required"
   RAILS_LOG_LEVEL: info
   CORS_ORIGINS: "*"
   SUPER_ADMIN_PHONE: "01017102923"
