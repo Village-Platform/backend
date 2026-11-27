@@ -13,6 +13,10 @@ data:
   # "1" = every /api/v1 call needs a user or guest token. Flip it once aghour.auth.tokenless_requests
   # {result="allowed"} is near zero, i.e. old app versions are gone; set it back to "0" to roll back.
   API_TOKEN_REQUIRED: "1"
+  REVIEWER_MFA_MODE: "required"
+  ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: "v9JIWmtSgeDPcG7KtZzmsazZWlVNKpxX"
+  ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: "bbacsuddykgzfEvNTBbfU0gjZqjh6S5V"
+  ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: "y4i7r499LFVbdRNA45G1qlKgoyM0Tgsu"
   RAILS_LOG_LEVEL: info
   CORS_ORIGINS: "*"
   SUPER_ADMIN_PHONE: "01017102923"

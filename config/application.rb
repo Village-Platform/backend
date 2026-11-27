@@ -45,7 +45,7 @@ module AghourServices
     #   off      - password only (default)
     #   optional - reviewers who enrolled must enter a code; others may enroll from the dashboard
     #   required - every reviewer must enter a code; one without a device enrolls right after the password
-    config.x.reviewer_mfa_mode = ENV.fetch("REVIEWER_MFA_MODE", "off")
+    config.x.reviewer_mfa_mode = ENV.fetch("REVIEWER_MFA_MODE", "required")
 
     # Active Record Encryption keeps TOTP secrets encrypted at rest. Production reads the keys from the
     # environment (`bin/rails db:encryption:init` prints a set); development and test set public
