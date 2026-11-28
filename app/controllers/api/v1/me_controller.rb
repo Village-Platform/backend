@@ -10,17 +10,17 @@ module Api
       # A new password revokes every token of this user, including the one on this request, so the
       # response carries a replacement in meta.token. Clients that ignore it are signed out on their
       # next call (a 401), which is safe, only abrupt.
-     
+
       def update
         attrs = me_params
-      
+
         if phone_change?(attrs) && !current_user.authenticate(params[:user][:current_password].to_s)
           return render_error(:unprocessable_content, "invalid_password")
         end
-      
+
         current_user.assign_attributes(attrs)
         current_user.save!(context: :profile_update)
-      
+
         if current_user.saved_change_to_token_version?
           render json: {
             data: UserSerializer.render(current_user),
@@ -31,10 +31,10 @@ module Api
         end
       rescue ActiveRecord::RecordInvalid => e
         raise unless e.record.errors.of_kind?(:phone, :taken)
-      
+
         render_error(:unprocessable_content, "phone_taken", details: e.record.errors.to_hash(true))
       end
-      
+
 
       # DELETE /api/v1/me  { "password": "..." }
       # Re-asks for the password so a leaked token alone cannot delete the account. A wrong

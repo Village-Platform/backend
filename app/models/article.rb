@@ -10,7 +10,9 @@ class Article < ApplicationRecord
   # article is ever public; authors who can publish directly create approved ones.
   enum :review_status, { pending: 0, approved: 1, rejected: 2 }, default: :approved, validate: true
 
-  belongs_to :author, class_name: "User", inverse_of: :articles
+  # Deleted accounts stay as tombstones that keep their articles (Users::DeleteAccount), so the
+  # author must be found even when soft-deleted, like every other belongs_to reaching a User.
+  belongs_to :author, class_name: "User", inverse_of: :articles, with_deleted: true
   belongs_to :reviewed_by, class_name: "User", optional: true, with_deleted: true
   # Pushed to this topic when the article goes live (Articles::SyncPushCampaign).
   belongs_to :notify_topic, class_name: "Topic", optional: true

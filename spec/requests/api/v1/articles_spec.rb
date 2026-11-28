@@ -39,4 +39,23 @@ RSpec.describe "Articles API", type: :request do
     expect(response).to have_http_status(:created)
     expect(json.dig("data", "review_status")).to eq("pending")
   end
+
+  # Account deletion keeps the user's articles and leaves a soft-deleted tombstone as their author,
+  # so the author association has to reach deleted users or the serializer finds no author.
+  it "keeps serving an article whose author deleted their account" do
+    author = create(:user, :firm_admin)
+    article = create(:article, author:, title: "Kept")
+    Users::DeleteAccount.call(user: author)
+    reader = auth_headers(create(:user))
+
+    get "/api/v1/articles", headers: reader
+
+    expect(response).to have_http_status(:ok)
+    expect(json["data"].map { _1["title"] }).to include("Kept")
+
+    get "/api/v1/articles/#{article.id}", headers: reader
+
+    expect(response).to have_http_status(:ok)
+    expect(json.dig("data", "author")).to eq("id" => author.id, "name" => Users::DeleteAccount::DELETED_NAME)
+  end
 end
